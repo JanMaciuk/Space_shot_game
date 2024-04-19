@@ -3,7 +3,9 @@ from enum import Enum
 
 """
 Assets credits:
-PlayerSprite: https://opengameart.org/content/skull-in-a-ufo-spacecraft
+Player: https://opengameart.org/content/skull-in-a-ufo-spacecraft
+Obstacle1: https://clipart-library.com/clip-art/168-1688863_clip-free-png-images-transparent-free-download-pngmart.htm
+Obstacle2: https://www.hiclipart.com/free-transparent-background-png-clipart-dplug
 """
 
 # Variables and constants
@@ -34,7 +36,7 @@ class object_type(Enum):
 class playerSprite(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load("Assets\PlayerSprite.png").convert_alpha()
+        self.image = pygame.image.load("Assets\Player.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.image = pygame.transform.scale(self.image, (self.rect.width//PLAYER_RESCALE, self.rect.height//PLAYER_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
