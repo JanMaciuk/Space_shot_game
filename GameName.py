@@ -15,11 +15,11 @@ SCREEN_WIDTH = 1366
 SCREEN_HEIGHT = 768
 BACKGROUND_COLOR = (0, 0, 0) # Black, we are in space
 PLAYER_RESCALE = 30
-MOVEMENT_SPEED = 4
+MOVEMENT_SPEED = 5
 FPS = 60
-ASTEROID_COUNT = 5 # The number of asteroids on the screen
+ASTEROID_COUNT = 10 # The number of asteroids
 ASTEROID_SPRITES = ["Assets\Asteroid1.png", "Assets\Asteroid2.png", "Assets\Asteroid3.png"]
-ASTEROID_RESCALE = 20
+ASTEROID_RESCALE = 10
 ENEMY_COUNT = 2 # The number of enemies on the screen
 AMMO_COUNT = 1 # The number of collectable ammo boxes on the screen
 main_loop = True
@@ -28,7 +28,7 @@ main_loop = True
 pygame.init()
 pygame.display.set_caption("Game Name")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
+allSprites = pygame.sprite.Group()
 
 class object_type(Enum):
     ASTEROID = 1
@@ -61,9 +61,13 @@ class genericSprite(pygame.sprite.Sprite):
         if isinstance(self, asteroidSprite):
             self.reRollPicture()
         # Bring the sprite to the top, slighty above the frame.
-        self.rect.y = -self.rect.height
+        self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         # Move object to random x position
         self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
+        # If the move caused a collision, try again
+        while len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
+            self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
+            self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         
 
 class asteroidSprite(genericSprite):
@@ -92,7 +96,6 @@ class playerSprite(genericSprite):
 # Initialize the game sprites
 player = playerSprite()
 player.draw()
-allSprites = pygame.sprite.Group()
 allSprites.add(player)
 for _ in range(ASTEROID_COUNT): allSprites.add(asteroidSprite())
 
@@ -117,6 +120,12 @@ while main_loop:
             sprite.moveDown()
             if sprite.rect.y > SCREEN_HEIGHT:
                 sprite.positionUp()
+            if sprite.rect.colliderect(player.rect):
+                print("Something collided with the player")
+    
+    #Check for coliisions
+
+
     
 
     # Draw a new frame
