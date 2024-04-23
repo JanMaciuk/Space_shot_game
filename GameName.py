@@ -8,6 +8,10 @@ Player: https://opengameart.org/content/skull-in-a-ufo-spacecraft
 Asteroid1: https://clipart-library.com/clip-art/168-1688863_clip-free-png-images-transparent-free-download-pngmart.htm
 Asteroid2: https://www.hiclipart.com/free-transparent-background-png-clipart-dplug
 Asteroid3: https://www.pngwing.com/en/free-png-zvitc
+Enemy1: https://toppng.com/free-image/enemy-spaceship-sprite-PNG-free-PNG-Images_170745
+Enemy2: https://www.anyrgb.com/en-clipart-gqgxl
+Enemy3: https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-sprite-png-transparent/
+Enemy4: https://www.pngwing.com/en/free-png-muhwz
 """
 
 # Variables and constants
