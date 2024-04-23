@@ -25,6 +25,9 @@ ASTEROID_COUNT = 10 # The number of asteroids
 ASTEROID_SPRITES = ["Assets\Asteroid1.png", "Assets\Asteroid2.png", "Assets\Asteroid3.png"]
 ASTEROID_RESCALE = 10
 ENEMY_COUNT = 2 # The number of enemies on the screen
+ENEMY_SPRITES = ["Assets\Enemy1.png", "Assets\Enemy2.png", "Assets\Enemy3.png", "Assets\Enemy4.png"]
+ENEMY_RESCALE = 6
+ENEMY_TRACKING_SPEED = 2 # How fast enemies move towards the player's x position
 AMMO_COUNT = 1 # The number of collectable ammo boxes on the screen
 main_loop = True
 
@@ -59,11 +62,13 @@ class genericSprite(pygame.sprite.Sprite):
 
     def moveDown(self):
         self.rect.y += MOVEMENT_SPEED
+
+    def reRollPicture(self):
+        pass   # Will be overridden by objects that change their pictures, avoid isInstance checks
     
     def positionUp(self):
         # Asteroids have a chance to change their picture
-        if isinstance(self, asteroidSprite):
-            self.reRollPicture()
+        self.reRollPicture()
         # Bring the sprite to the top, slighty above the frame.
         self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         # Move object to random x position
@@ -87,6 +92,25 @@ class asteroidSprite(genericSprite):
         self.image = pygame.transform.scale(self.image, (self.rect.width//ASTEROID_RESCALE, self.rect.height//ASTEROID_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
 
+class enemySprite(genericSprite):
+    def __init__(self):
+        super().__init__()
+        self.positionUp() # Start at the top of the screen and choose a sprite picture
+
+    def reRollPicture(self):
+        #Change the sprite to a random enemy
+        imageIndex = random.randint(0, len(ENEMY_SPRITES)-1)
+        self.image = pygame.image.load(ENEMY_SPRITES[imageIndex]).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.image = pygame.transform.scale(self.image, (self.rect.width//ENEMY_RESCALE, self.rect.height//ENEMY_RESCALE))
+        self.rect = self.image.get_rect()   # Get new rect after rescaling
+
+    def moveDown(self):
+        self.rect.y += MOVEMENT_SPEED
+        if self.rect.x < player.rect.x and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
+            self.rect.x += ENEMY_TRACKING_SPEED
+        elif self.rect.x > player.rect.x and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
+            self.rect.x -= ENEMY_TRACKING_SPEED
 
 class playerSprite(genericSprite):
     def __init__(self):
@@ -102,6 +126,7 @@ player = playerSprite()
 player.draw()
 allSprites.add(player)
 for _ in range(ASTEROID_COUNT): allSprites.add(asteroidSprite())
+for _ in range(ENEMY_COUNT): allSprites.add(enemySprite())
 
 
 # Begin main game loop
