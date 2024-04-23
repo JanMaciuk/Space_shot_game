@@ -15,7 +15,7 @@ SCREEN_WIDTH = 1366
 SCREEN_HEIGHT = 768
 BACKGROUND_COLOR = (0, 0, 0) # Black, we are in space
 PLAYER_RESCALE = 30
-MOVEMENT_SPEED = 3
+MOVEMENT_SPEED = 4
 FPS = 60
 ASTEROID_COUNT = 5 # The number of asteroids on the screen
 ASTEROID_SPRITES = ["Assets\Asteroid1.png", "Assets\Asteroid2.png", "Assets\Asteroid3.png"]
@@ -31,7 +31,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
 class object_type(Enum):
-    OBSTACLE = 1
+    ASTEROID = 1
     ENEMY = 2
     AMMO = 3
     BULLET = 4    # Maybe?
@@ -56,20 +56,20 @@ class genericSprite(pygame.sprite.Sprite):
     def moveDown(self):
         self.rect.y += MOVEMENT_SPEED
     
-    def positionUp(self, resetX = False):
+    def positionUp(self):
+        # Asteroids have a chance to change their picture
+        if isinstance(self, asteroidSprite):
+            self.reRollPicture()
         # Bring the sprite to the top, slighty above the frame.
         self.rect.y = -self.rect.height
         # Move object to random x position
-        if resetX: 
-            self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
-        # Asteroids have a chance to change their picture
-        if self.isinstance(asteroidSprite):
-            self.reRollPicture()
+        self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
+        
 
 class asteroidSprite(genericSprite):
     def __init__(self):
         super().__init__()
-        self.reRollPicture()
+        self.positionUp() # Start at the top of the screen and choose a sprite picture
 
     def reRollPicture(self):
         #Change the sprite to a random asteroid
@@ -89,9 +89,13 @@ class playerSprite(genericSprite):
         self.rect = self.image.get_rect()   # Get new rect after rescaling
         self.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT-self.rect.height) # Start at the bottom center
 
-    
+# Initialize the game sprites
 player = playerSprite()
 player.draw()
+allSprites = pygame.sprite.Group()
+allSprites.add(player)
+for _ in range(ASTEROID_COUNT): allSprites.add(asteroidSprite())
+
 
 # Begin main game loop
 while main_loop:
@@ -106,11 +110,18 @@ while main_loop:
         player.moveLeft()
     if pressed_keys[pygame.K_RIGHT] and player.rect.x < SCREEN_WIDTH - player.rect.width:
         player.moveRight()
+
+    # Move all sprites except the player and bullets down:
+    for sprite in allSprites:
+        if sprite != player:
+            sprite.moveDown()
+            if sprite.rect.y > SCREEN_HEIGHT:
+                sprite.positionUp()
     
 
     # Draw a new frame
     screen.fill(BACKGROUND_COLOR)
-    player.draw()
+    allSprites.draw(screen)
     pygame.time.Clock().tick(FPS)
     pygame.display.update()
 
