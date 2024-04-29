@@ -14,6 +14,21 @@ Enemy3: https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-
 Enemy4: https://www.pngwing.com/en/free-png-muhwz
 """
 
+'''
+TODO features:
+Save settings to file:
+Adjustable difficulty (changing speed and number of enemies and asteroids)
+
+Save stats to file:
+Lives, score, ammo, highscore, etc.
+
+Change background to space image
+Add music and sound effects
+Player able to shoot
+Menu for new game, settings, load game, highscore.
+
+'''
+
 # Variables and constants
 SCREEN_WIDTH = 1366
 SCREEN_HEIGHT = 768
