@@ -1,4 +1,6 @@
 import customtkinter as CTK
+import re
+import os
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
@@ -10,6 +12,17 @@ FONT_LABEL = ("Arial", 14)
 WIDTH_BUTTON = int(WINDOW_RESOLUTION.split("x")[0])
 CTK.set_appearance_mode("dark")  # Modes: system (default), light, dark
 CTK.set_default_color_theme("dark-blue")  # Themes: blue (default), dark-blue, green
+
+class PromptWindow(CTK.CTkToplevel):
+    def __init__(self, parent:CTK.CTk, title:str, text:str) -> None:
+        super().__init__(parent)
+        self.title(title)
+        self.frame = CTK.CTkFrame(self)
+        self.frame.grid()
+        self.label = CTK.CTkLabel(self.frame, text=text)
+        self.label.grid()
+        self.button = CTK.CTkButton(self.frame, text="OK", command=self.destroy)
+        self.button.grid()
 
 class MainMenu(CTK.CTk):
     def __init__(self) -> None:
@@ -92,11 +105,23 @@ class MainMenu(CTK.CTk):
         Create a new profile file and fill with defaults
         '''
         #Ask for a profile/file name and create it
-        fileName = "TODO"
-        filePath = "Append saves folder path to the file name"
-
-        #Copy the defaults to the new file
-
+        dialog = CTK.CTkInputDialog(title="New profile", text="Enter the profile name:")
+        fileName = dialog.get_input()
+        if not fileName: return     # Action was user canceled
+        if not re.match(r'^[a-zA-Z0-9_-]+$', fileName):
+            PromptWindow(self, "Invalid name", "The name can only contain letters, numbers, underscores and hyphens.")
+            return
+        if len(fileName) > 20:
+            PromptWindow(self, "Invalid name", "The name can't be longer than 20 characters.")
+            return
+        #Create the file
+        filePath = os.path.join(os.getcwd(), "Profiles", fileName + ".json")
+        if os.path.exists(filePath):
+            PromptWindow(self, "Invalid name", "The profile already exists.")
+            return
+        with open(filePath, "w") as file:
+            with open(DEFAULTS_PATH, "r") as defaults:
+                file.write(defaults.read()) # Copy the default settings
         #Load the new file
         self.loadSettings(filePath)
 
@@ -124,13 +149,13 @@ class MainMenu(CTK.CTk):
 
 
     #Button event handlers:
-    def eventSelectProfile(self, event) -> None:
+    def eventSelectProfile(self, event=None) -> None:
         self.loadSettings(askopenfilename())
-    def eventNewProfile(self, event) -> None:
+    def eventNewProfile(self, event=None) -> None:
         self.newProfile()
-    def eventSaveSettings(self, event) -> None:
+    def eventSaveSettings(self, event=None) -> None:
         self.saveSettings()
-    def eventLaunchGame(self, event) -> None:
+    def eventLaunchGame(self, event=None) -> None:
         self.launchGame()
 
     
