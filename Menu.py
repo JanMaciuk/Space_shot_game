@@ -2,7 +2,7 @@ import customtkinter as CTK
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
-WINDOW_RESOLUTION = "350x750"
+WINDOW_RESOLUTION = "350x350"
 WINDOW_TITLE = "Main menu"
 DEFAULTS_PATH = "defaults.json"
 FONT_BUTTON = ("Arial", 22)
@@ -57,23 +57,23 @@ class MainMenu(CTK.CTk):
         self.ammo.grid(    row=7, column=1 )
 
         #Editable fields:
+        labelEnemySpeed = CTK.CTkLabel(self.frame, text="Enemy maneuverability: ", font=FONT_LABEL)
+        self.enemySpeed = CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
         labelEnemies =    CTK.CTkLabel(self.frame, text="Enemy spawn frequency: ", font=FONT_LABEL)
         self.enemies =    CTK.CTkEntry(self.frame, font=FONT_LABEL)
         labelAsteroids =  CTK.CTkLabel(self.frame, text="Asteroid spawn frequency: ", font=FONT_LABEL)
         self.asteroids =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
-        labelAmmoCount =  CTK.CTkLabel(self.frame, text="Supplies box spawn frequency: ", font=FONT_LABEL)
+        labelAmmoCount =  CTK.CTkLabel(self.frame, text="Supply box spawn frequency: ", font=FONT_LABEL)
         self.ammoCount =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
-        labelEnemySpeed = CTK.CTkLabel(self.frame, text="Enemy maneuverability: ", font=FONT_LABEL)
-        self.enemySpeed = CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
 
-        labelEnemies.grid(    row=8, column=0 )
-        self.enemies.grid(    row=8, column=1 )
-        labelAsteroids.grid(  row=9, column=0 )
-        self.asteroids.grid(  row=9, column=1 )
-        labelAmmoCount.grid(  row=10, column=0 )
-        self.ammoCount.grid(  row=10, column=1 )
-        labelEnemySpeed.grid( row=11, column=0 )
-        self.enemySpeed.grid( row=11, column=1 )
+        labelEnemySpeed.grid( row=8, column=0 )
+        self.enemySpeed.grid( row=8, column=1 )
+        labelEnemies.grid(    row=9, column=0 )
+        self.enemies.grid(    row=9, column=1 )
+        labelAsteroids.grid(  row=10, column=0 )
+        self.asteroids.grid(  row=10, column=1 )
+        labelAmmoCount.grid(  row=11, column=0 )
+        self.ammoCount.grid(  row=11, column=1 )
         
         
 
