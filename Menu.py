@@ -1,12 +1,13 @@
 import customtkinter as CTK
 import re
 import os
+import json
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
 WINDOW_RESOLUTION = "350x415"
 WINDOW_TITLE = "Main menu"
-DEFAULTS_PATH = "defaults.json"
+DEFAULTS_PATH = "default.json"
 FONT_BUTTON = ("Arial", 22)
 FONT_LABEL = ("Arial", 14)
 WIDTH_BUTTON = int(WINDOW_RESOLUTION.split("x")[0])
@@ -79,7 +80,7 @@ class MainMenu(CTK.CTk):
         labelAsteroids =  CTK.CTkLabel(self.frame, text="Asteroid spawn frequency: ", font=FONT_LABEL)
         self.asteroids =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
         labelAmmoCount =  CTK.CTkLabel(self.frame, text="Supply box spawn frequency: ", font=FONT_LABEL)
-        self.ammoCount =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
+        self.supplyCount =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
 
         labelEnemySpeed.grid( row=8, column=0 )
         self.enemySpeed.grid( row=8, column=1 )
@@ -90,7 +91,7 @@ class MainMenu(CTK.CTk):
         labelAsteroids.grid(  row=11, column=0 )
         self.asteroids.grid(  row=11, column=1 )
         labelAmmoCount.grid(  row=12, column=0 )
-        self.ammoCount.grid(  row=12, column=1 )
+        self.supplyCount.grid(  row=12, column=1 )
         
         exitButton = CTK.CTkButton(self.frame, text="Quit game", command=self.destroy, font=FONT_BUTTON, width=WIDTH_BUTTON)
         exitButton.grid(row=13, column=0, columnspan=2)
@@ -99,11 +100,36 @@ class MainMenu(CTK.CTk):
         '''
         Fill the fields with data read from the file, return value indicates success
         '''
-        #TODO Try to read data from the file
+        #Try to read data from the file, checks both file path and file content
+        try:
+            dict = json.load(open(filePath, "r"))
+            assert isinstance(dict["Score"], int)
+        except:
+            PromptWindow(self, "Profile read error", "Failed to load the profile file, make sure it's a valid profile.")
+            return False
+        
+        #If we got here, the file is a valid profile, set it as current profile.
         self.currentFilePath = filePath
-
-        #Read data from file and fill the fields
-        pass
+        #Fill fields with read data
+        self.profile.configure(text=os.path.basename(filePath)[0:-5])
+        self.score.configure(text=str(dict["Score"]))
+        self.health.configure(text=str(dict["Health"]))
+        self.ammo.configure(text=str(dict["Ammo"]))
+        match dict["EnemySpeed"]:
+            case 1: self.enemySpeed.set("Low")
+            case 2: self.enemySpeed.set("Medium")
+            case 3: self.enemySpeed.set("High")
+        match dict["EnemyHealth"]:
+            case 1: self.enemyHP.set("Low")
+            case 2: self.enemyHP.set("Medium")
+            case 3: self.enemyHP.set("High")
+        self.enemies.delete(0, "end")
+        self.enemies.insert(0, str(dict["EnemyCount"]))
+        self.asteroids.delete(0, "end")
+        self.asteroids.insert(0, str(dict["AsteroidCount"]))
+        self.supplyCount.delete(0, "end")
+        self.supplyCount.insert(0, str(dict["SupplyCount"]))
+        return True
 
     def newProfile(self) -> None:
         '''
