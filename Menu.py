@@ -24,6 +24,7 @@ class PromptWindow(CTK.CTkToplevel):
         self.label.grid()
         self.button = CTK.CTkButton(self.frame, text="OK", command=self.destroy)
         self.button.grid()
+        self.after(10, self.lift)   # Dsiplay the notification above main menu.
 
 class MainMenu(CTK.CTk):
     def __init__(self) -> None:
@@ -100,10 +101,13 @@ class MainMenu(CTK.CTk):
         '''
         Fill the fields with data read from the file, return value indicates success
         '''
-        #Try to read data from the file, checks both file path and file content
+        #Try to read data from the file, checks both file path and file content.
         try:
             dict = json.load(open(filePath, "r"))
-            assert isinstance(dict["Score"], int)
+            for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "EnemyCount", "AsteroidCount", "SupplyCount"]:
+                if key not in dict or not isinstance(dict[key], int):
+                    raise Exception()
+
         except:
             PromptWindow(self, "Profile read error", "Failed to load the profile file, make sure it's a valid profile.")
             return False
@@ -135,25 +139,25 @@ class MainMenu(CTK.CTk):
         '''
         Create a new profile file and fill with defaults
         '''
-        #Ask for a profile/file name and create it
+        #Ask for a profile/file name and create it:
         dialog = CTK.CTkInputDialog(title="New profile", text="Enter the profile name:")
         fileName = dialog.get_input()
-        if not fileName: return     # Action was user canceled
+        if not fileName: return     # Action was user canceled.
         if not re.match(r'^[a-zA-Z0-9_-]+$', fileName):
             PromptWindow(self, "Invalid name", "The name can only contain letters, numbers, underscores and hyphens.")
             return
         if len(fileName) > 20:
             PromptWindow(self, "Invalid name", "The name can't be longer than 20 characters.")
             return
-        #Create the file
+        #Create the file:
         filePath = os.path.join(os.getcwd(), "Profiles", fileName + ".json")
         if os.path.exists(filePath):
             PromptWindow(self, "Invalid name", "The profile already exists.")
             return
         with open(filePath, "w") as file:
             with open(DEFAULTS_PATH, "r") as defaults:
-                file.write(defaults.read()) # Copy the default settings
-        #Load the new file
+                file.write(defaults.read()) # Copy the default settings.
+        #Load the new file:
         self.loadSettings(filePath)
 
     def saveSettings(self) -> bool:
@@ -162,21 +166,58 @@ class MainMenu(CTK.CTk):
         If the data is valid return True and save the data to the file.
         '''
         #Validate data:
-        if self.currentFilePath == DEFAULTS_PATH: # Nothing to save
-            #TODO: prompt the user to select a player profile.
+        if self.currentFilePath == DEFAULTS_PATH: # Nothing to save.
+            PromptWindow(self, "No profile", "Nothing to save, create a new profile first.")
             return False  
 
-        #Save data to file (self.currentFilePath):
-        pass
+        #Construct dictionary from fields:
+        try:
+            dict = {
+                "Score": int(self.score.cget("text")),
+                "Health": int(self.health.cget("text")),
+                "Ammo": int(self.ammo.cget("text")),
+                "EnemySpeed": {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
+                "EnemyHealth": {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
+                "EnemyCount": int(self.enemies.get()),
+                "AsteroidCount": int(self.asteroids.get()),
+                "SupplyCount": int(self.supplyCount.get())
+            }
+        except:
+            PromptWindow(self, "Invalid data", "Invalid data entered, check that values of textboxes are integers.")
+            return False
+        
+        #Validate the read data:
+        #Check fields where user can't enter his own values, if they are out of bounds, save file was likely tampered with.
+        if  ((dict["Score"] < 0) or (dict["Health"] < 0) or (dict["Ammo"] < 0) or
+            (dict["EnemySpeed"] not in [1, 2, 3]) or (dict["EnemyHealth"] not in [1, 2, 3])):
+            PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
+            return False
+        
+        #Check fields where user can enter his own values:
+        if  ((dict["EnemyCount"] < 1) or (dict["AsteroidCount"] < 1) or (dict["SupplyCount"] < 1) or
+             (dict["EnemyCount"] > 12) or (dict["AsteroidCount"] > 12) or (dict["SupplyCount"] > 12)):
+            PromptWindow(self, "Invalid data", "Spawn frequencies out of range, check that they are between 1 and 12.")
+            return False
+
+        #Save data to json file:
+        try:
+            with open(self.currentFilePath, "w") as file:
+                json.dump(dict, file)
+        except:
+            PromptWindow(self, "Save error", "File save profile, make sure the file is not open in another program or write protected.")
+            return False
+        return True
+            
+
 
     def launchGame(self) -> None:
         '''
         Save settings and launch the game
         '''
         if self.saveSettings():
-            #Launch the game
+            #Launch the game.
             pass
-            #Close the menu
+            #Close the menu.
 
 
     #Button event handlers:
