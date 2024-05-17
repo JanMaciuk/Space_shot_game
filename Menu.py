@@ -4,7 +4,7 @@ import os
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
-WINDOW_RESOLUTION = "350x350"
+WINDOW_RESOLUTION = "350x415"
 WINDOW_TITLE = "Main menu"
 DEFAULTS_PATH = "defaults.json"
 FONT_BUTTON = ("Arial", 22)
@@ -72,6 +72,8 @@ class MainMenu(CTK.CTk):
         #Editable fields:
         labelEnemySpeed = CTK.CTkLabel(self.frame, text="Enemy maneuverability: ", font=FONT_LABEL)
         self.enemySpeed = CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
+        labelEnemyHP =    CTK.CTkLabel(self.frame, text="Enemy health: ", font=FONT_LABEL)
+        self.enemyHP =    CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
         labelEnemies =    CTK.CTkLabel(self.frame, text="Enemy spawn frequency: ", font=FONT_LABEL)
         self.enemies =    CTK.CTkEntry(self.frame, font=FONT_LABEL)
         labelAsteroids =  CTK.CTkLabel(self.frame, text="Asteroid spawn frequency: ", font=FONT_LABEL)
@@ -81,14 +83,17 @@ class MainMenu(CTK.CTk):
 
         labelEnemySpeed.grid( row=8, column=0 )
         self.enemySpeed.grid( row=8, column=1 )
-        labelEnemies.grid(    row=9, column=0 )
-        self.enemies.grid(    row=9, column=1 )
-        labelAsteroids.grid(  row=10, column=0 )
-        self.asteroids.grid(  row=10, column=1 )
-        labelAmmoCount.grid(  row=11, column=0 )
-        self.ammoCount.grid(  row=11, column=1 )
+        labelEnemyHP.grid(    row=9, column=0 )
+        self.enemyHP.grid(    row=9, column=1 )
+        labelEnemies.grid(    row=10, column=0 )
+        self.enemies.grid(    row=10, column=1 )
+        labelAsteroids.grid(  row=11, column=0 )
+        self.asteroids.grid(  row=11, column=1 )
+        labelAmmoCount.grid(  row=12, column=0 )
+        self.ammoCount.grid(  row=12, column=1 )
         
-        
+        exitButton = CTK.CTkButton(self.frame, text="Quit game", command=self.destroy, font=FONT_BUTTON, width=WIDTH_BUTTON)
+        exitButton.grid(row=13, column=0, columnspan=2)
 
     def loadSettings(self, filePath:str) -> bool:
         '''
