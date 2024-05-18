@@ -30,7 +30,6 @@ Player able to shoot
 # Variables and constants
 SCREEN_WIDTH = 1366
 SCREEN_HEIGHT = 768
-BACKGROUND_COLOR = (0, 0, 0) # Black, we are in space
 PLAYER_RESCALE = 30
 MOVEMENT_SPEED = 5
 FPS = 60
@@ -39,6 +38,9 @@ ASTEROID_RESCALE = 10
 ENEMY_SPRITES = [r"Assets\Enemy1.png", r"Assets\Enemy2.png", r"Assets\Enemy3.png", r"Assets\Enemy4.png"]
 ENEMY_RESCALE = 6
 DEFAULT_PROFILE_PATH = "default.json"
+BACKGROUND_IMAGES = [r"Assets\Bg1.jpg", r"Assets\Bg2.jpg", r"Assets\Bg3.jpeg"]
+BACKGROUND_IMAGE = pygame.image.load(BACKGROUND_IMAGES[random.randint(0, len(BACKGROUND_IMAGES)-1)])
+BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
 main_loop = True
 
 # Can be read from a file, defaults:
@@ -217,7 +219,7 @@ while main_loop:
     
 
     # Draw a new frame
-    screen.fill(BACKGROUND_COLOR)
+    screen.blit(BACKGROUND_IMAGE, (0, 0))
     allSprites.draw(screen)
     pygame.time.Clock().tick(FPS)
     pygame.display.update()
