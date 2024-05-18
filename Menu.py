@@ -3,7 +3,7 @@ import re, os, json, subprocess
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
-WINDOW_RESOLUTION = "350x415"
+WINDOW_RESOLUTION = "350x440"
 WINDOW_TITLE = "Main menu"
 DEFAULTS_PATH = "default.json"
 FONT_BUTTON = ("Arial", 22)
@@ -74,6 +74,8 @@ class MainMenu(CTK.CTk):
         self.enemySpeed = CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
         labelEnemyHP =    CTK.CTkLabel(self.frame, text="Enemy health: ", font=FONT_LABEL)
         self.enemyHP =    CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
+        labelAsteroidHP = CTK.CTkLabel(self.frame, text="Asteroid durability: ", font=FONT_LABEL)
+        self.asteroidHP = CTK.CTkOptionMenu(self.frame, values=["Low", "Medium", "High"], font=FONT_LABEL)
         labelEnemies =    CTK.CTkLabel(self.frame, text="Enemy spawn frequency: ", font=FONT_LABEL)
         self.enemies =    CTK.CTkEntry(self.frame, font=FONT_LABEL)
         labelAsteroids =  CTK.CTkLabel(self.frame, text="Asteroid spawn frequency: ", font=FONT_LABEL)
@@ -85,15 +87,17 @@ class MainMenu(CTK.CTk):
         self.enemySpeed.grid( row=8, column=1 )
         labelEnemyHP.grid(    row=9, column=0 )
         self.enemyHP.grid(    row=9, column=1 )
-        labelEnemies.grid(    row=10, column=0 )
-        self.enemies.grid(    row=10, column=1 )
-        labelAsteroids.grid(  row=11, column=0 )
-        self.asteroids.grid(  row=11, column=1 )
-        labelAmmoCount.grid(  row=12, column=0 )
-        self.supplyCount.grid(  row=12, column=1 )
+        labelAsteroidHP.grid( row=10, column=0 )
+        self.asteroidHP.grid( row=10, column=1 )
+        labelEnemies.grid(    row=11, column=0 )
+        self.enemies.grid(    row=11, column=1 )
+        labelAsteroids.grid(  row=12, column=0 )
+        self.asteroids.grid(  row=12, column=1 )
+        labelAmmoCount.grid(  row=13, column=0 )
+        self.supplyCount.grid(row=13, column=1 )
         
         exitButton = CTK.CTkButton(self.frame, text="Quit game", command=self.destroy, font=FONT_BUTTON, width=WIDTH_BUTTON)
-        exitButton.grid(row=13, column=0, columnspan=2)
+        exitButton.grid(row=14, column=0, columnspan=2)
 
     def loadSettings(self, filePath:str) -> bool:
         '''
@@ -102,7 +106,7 @@ class MainMenu(CTK.CTk):
         #Try to read data from the file, checks both file path and file content.
         try:
             profileDict = json.load(open(filePath, "r"))
-            for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "EnemyCount", "AsteroidCount", "SupplyCount"]:
+            for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "AsteroidDurability", "EnemyCount", "AsteroidCount", "SupplyCount"]:
                 if key not in profileDict or not isinstance(profileDict[key], int):
                     raise AssertionError()
 
@@ -125,6 +129,10 @@ class MainMenu(CTK.CTk):
             case 1: self.enemyHP.set("Low")
             case 2: self.enemyHP.set("Medium")
             case 3: self.enemyHP.set("High")
+        match profileDict["AsteroidDurability"]:
+            case 1: self.asteroidHP.set("Low")
+            case 2: self.asteroidHP.set("Medium")
+            case 3: self.asteroidHP.set("High")
         self.enemies.delete(0, "end")
         self.enemies.insert(0, str(profileDict["EnemyCount"]))
         self.asteroids.delete(0, "end")
@@ -176,6 +184,7 @@ class MainMenu(CTK.CTk):
                 "Ammo": int(self.ammo.cget("text")),
                 "EnemySpeed": {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
                 "EnemyHealth": {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
+                "AsteroidDurability": {"Low":1, "Medium":2, "High":3}[self.asteroidHP.get()],
                 "EnemyCount": int(self.enemies.get()),
                 "AsteroidCount": int(self.asteroids.get()),
                 "SupplyCount": int(self.supplyCount.get())
@@ -187,7 +196,7 @@ class MainMenu(CTK.CTk):
         #Validate the read data:
         #Check fields where user can't enter his own values, if they are out of bounds, save file was likely tampered with.
         if  ((dict["Score"] < 0) or (dict["Health"] < 0) or (dict["Ammo"] < 0) or
-            (dict["EnemySpeed"] not in [1, 2, 3]) or (dict["EnemyHealth"] not in [1, 2, 3])):
+            (dict["EnemySpeed"] not in [1, 2, 3]) or (dict["EnemyHealth"] not in [1, 2, 3]) or (dict["AsteroidDurability"] not in [1, 2, 3])):
             PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
             return False
         

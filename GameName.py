@@ -18,14 +18,13 @@ Enemy4: https://www.pngwing.com/en/free-png-muhwz
 
 '''
 TODO features:
+
+Player health and ammo display.
+Shooting.
+Explosion and respawn on collision (for player just decrease health).
+Save game state to file, main menu process stdin.
+
 Auto difficulty mode, increases with score.
-Asteroid durability adjustable.
-
-Save stats to file:
-Lives, score, ammo, highscore, etc.
-
-Change background to space image
-Player able to shoot
 
 '''
 # Variables and constants
@@ -42,7 +41,6 @@ DEFAULT_PROFILE_PATH = "default.json"
 BACKGROUND_IMAGES = [r"Assets\Bg1.jpg", r"Assets\Bg2.jpg", r"Assets\Bg3.jpeg"]
 BACKGROUND_IMAGE = pygame.image.load(BACKGROUND_IMAGES[random.randint(0, len(BACKGROUND_IMAGES)-1)])
 BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
-ASTEROID_HEALTH = 1
 mainLoop = True
 profileFilePath = DEFAULT_PROFILE_PATH
 profileDict = None
@@ -80,6 +78,7 @@ PLAYER_HEALTH = profileDict["Health"]
 playerAmmo = profileDict["Ammo"]
 ENEMY_TRACKING_SPEED = profileDict["EnemySpeed"]
 ENEMY_HEALTH = profileDict["EnemyHealth"]
+ASTEROID_DURABILITY = profileDict["AsteroidDurability"]
 ENEMY_COUNT = profileDict["EnemyCount"]
 ASTEROID_COUNT = profileDict["AsteroidCount"]
 SUPPLY_COUNT = profileDict["SupplyCount"]
@@ -145,12 +144,12 @@ class genericSprite(pygame.sprite.Sprite):
 class asteroidSprite(genericSprite):
     def __init__(self) -> None:
         super().__init__()
-        self.health = ASTEROID_HEALTH
+        self.health = ASTEROID_DURABILITY
         self.positionUp() # Start at the top of the screen and choose a sprite picture
 
     def reRollPicture(self) -> None:
         #Change the sprite to a random asteroid
-        self.health = ASTEROID_HEALTH  # Reset health as the asteroid respawns
+        self.health = ASTEROID_DURABILITY  # Reset health as the asteroid respawns
         imageIndex = random.randint(0, len(ASTEROID_SPRITES)-1)
         self.image = pygame.image.load(ASTEROID_SPRITES[imageIndex]).convert_alpha()
         self.rect = self.image.get_rect()
