@@ -19,6 +19,7 @@ Enemy4: https://www.pngwing.com/en/free-png-muhwz
 '''
 TODO features:
 Auto difficulty mode, increases with score.
+Asteroid durability adjustable.
 
 Save stats to file:
 Lives, score, ammo, highscore, etc.
@@ -41,17 +42,8 @@ DEFAULT_PROFILE_PATH = "default.json"
 BACKGROUND_IMAGES = [r"Assets\Bg1.jpg", r"Assets\Bg2.jpg", r"Assets\Bg3.jpeg"]
 BACKGROUND_IMAGE = pygame.image.load(BACKGROUND_IMAGES[random.randint(0, len(BACKGROUND_IMAGES)-1)])
 BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
-main_loop = True
-
-# Can be read from a file, defaults:
-playerScore = 0
-playerHealth = 5
-playerAmmo = 5
-ENEMY_TRACKING_SPEED = 2 # How fast enemies move towards the player's x position
-ENEMY_HEALTH = 2    # How many hits an enemy can take
-ENEMY_COUNT = 2     # The number of enemies on the screen
-ASTEROID_COUNT = 10 # The number of asteroids
-SUPPLY_COUNT = 1    # The number of collectable supply boxes on the screen
+ASTEROID_HEALTH = 1
+mainLoop = True
 profileFilePath = DEFAULT_PROFILE_PATH
 profileDict = None
 
@@ -84,7 +76,7 @@ if not profileDict:
 
 # Load the profile settings
 playerScore = profileDict["Score"]
-playerHealth = profileDict["Health"]
+PLAYER_HEALTH = profileDict["Health"]
 playerAmmo = profileDict["Ammo"]
 ENEMY_TRACKING_SPEED = profileDict["EnemySpeed"]
 ENEMY_HEALTH = profileDict["EnemyHealth"]
@@ -111,6 +103,7 @@ class genericSprite(pygame.sprite.Sprite):
     """
     def __init__(self) -> None:
         super().__init__()
+        self.health = 1
 
     def draw(self) -> None:
         screen.blit(self.image, self.rect)
@@ -126,9 +119,18 @@ class genericSprite(pygame.sprite.Sprite):
 
     def reRollPicture(self) -> None:
         pass   # Will be overridden by objects that change their pictures, avoid isInstance checks
+
+    def takeDamage(self) -> None:
+        if self.health <= 1:
+            self.positionUp()
+        else:
+            self.health -= 1
     
     def positionUp(self) -> None:
-        # Asteroids have a chance to change their picture
+        '''
+        Respawn sprite above the screen.
+        '''
+        # Change picture (only implemented for some objects)
         self.reRollPicture()
         # Bring the sprite to the top, slighty above the frame.
         self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
@@ -143,10 +145,12 @@ class genericSprite(pygame.sprite.Sprite):
 class asteroidSprite(genericSprite):
     def __init__(self) -> None:
         super().__init__()
+        self.health = ASTEROID_HEALTH
         self.positionUp() # Start at the top of the screen and choose a sprite picture
 
     def reRollPicture(self) -> None:
         #Change the sprite to a random asteroid
+        self.health = ASTEROID_HEALTH  # Reset health as the asteroid respawns
         imageIndex = random.randint(0, len(ASTEROID_SPRITES)-1)
         self.image = pygame.image.load(ASTEROID_SPRITES[imageIndex]).convert_alpha()
         self.rect = self.image.get_rect()
@@ -156,10 +160,12 @@ class asteroidSprite(genericSprite):
 class enemySprite(genericSprite):
     def __init__(self) -> None:
         super().__init__()
+        self.health = ENEMY_HEALTH
         self.positionUp() # Start at the top of the screen and choose a sprite picture
 
     def reRollPicture(self) -> None:
         #Change the sprite to a random enemy
+        self.health = ENEMY_HEALTH  # Reset health as the enemy respawns
         imageIndex = random.randint(0, len(ENEMY_SPRITES)-1)
         self.image = pygame.image.load(ENEMY_SPRITES[imageIndex]).convert_alpha()
         self.rect = self.image.get_rect()
@@ -176,11 +182,29 @@ class enemySprite(genericSprite):
 class playerSprite(genericSprite):
     def __init__(self) -> None:
         super().__init__()
+        self.health = PLAYER_HEALTH
         self.image = pygame.image.load(r"Assets\Player.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.image = pygame.transform.scale(self.image, (self.rect.width//PLAYER_RESCALE, self.rect.height//PLAYER_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
         self.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT-self.rect.height) # Start at the bottom center
+
+    def reRollPicture(self) -> None:
+        # If this was called on the player, it means he died.
+        self.health = 0  # Zero health means a dead player.
+        saveProfileQuit()
+
+
+
+def saveProfileQuit() -> None:
+    ''' 
+    Save the current results and settings to the profile file (if its not default)
+    Then open the main menu passing current profile path as argument
+    '''
+    global mainLoop
+    mainLoop = False    # Exit the game loop
+    #TODO: Save the current results to the profile file
+
 
 # Initialize the game sprites
 player = playerSprite()
@@ -191,11 +215,11 @@ for _ in range(ENEMY_COUNT): allSprites.add(enemySprite())
 
 
 # Begin main game loop
-while main_loop:
+while mainLoop:
     # Check for game exit command
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            main_loop = False # this will be the last iteration of the loop
+            saveProfileQuit()
 
     # Check for player movement
     pressed_keys = pygame.key.get_pressed()
