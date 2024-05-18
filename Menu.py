@@ -1,7 +1,5 @@
 import customtkinter as CTK
-import re
-import os
-import json
+import re, os, json, subprocess
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
@@ -103,10 +101,10 @@ class MainMenu(CTK.CTk):
         '''
         #Try to read data from the file, checks both file path and file content.
         try:
-            dict = json.load(open(filePath, "r"))
+            profileDict = json.load(open(filePath, "r"))
             for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "EnemyCount", "AsteroidCount", "SupplyCount"]:
-                if key not in dict or not isinstance(dict[key], int):
-                    raise Exception()
+                if key not in profileDict or not isinstance(profileDict[key], int):
+                    raise AssertionError()
 
         except:
             PromptWindow(self, "Profile read error", "Failed to load the profile file, make sure it's a valid profile.")
@@ -116,23 +114,23 @@ class MainMenu(CTK.CTk):
         self.currentFilePath = filePath
         #Fill fields with read data
         self.profile.configure(text=os.path.basename(filePath)[0:-5])
-        self.score.configure(text=str(dict["Score"]))
-        self.health.configure(text=str(dict["Health"]))
-        self.ammo.configure(text=str(dict["Ammo"]))
-        match dict["EnemySpeed"]:
+        self.score.configure(text=str(profileDict["Score"]))
+        self.health.configure(text=str(profileDict["Health"]))
+        self.ammo.configure(text=str(profileDict["Ammo"]))
+        match profileDict["EnemySpeed"]:
             case 1: self.enemySpeed.set("Low")
             case 2: self.enemySpeed.set("Medium")
             case 3: self.enemySpeed.set("High")
-        match dict["EnemyHealth"]:
+        match profileDict["EnemyHealth"]:
             case 1: self.enemyHP.set("Low")
             case 2: self.enemyHP.set("Medium")
             case 3: self.enemyHP.set("High")
         self.enemies.delete(0, "end")
-        self.enemies.insert(0, str(dict["EnemyCount"]))
+        self.enemies.insert(0, str(profileDict["EnemyCount"]))
         self.asteroids.delete(0, "end")
-        self.asteroids.insert(0, str(dict["AsteroidCount"]))
+        self.asteroids.insert(0, str(profileDict["AsteroidCount"]))
         self.supplyCount.delete(0, "end")
-        self.supplyCount.insert(0, str(dict["SupplyCount"]))
+        self.supplyCount.insert(0, str(profileDict["SupplyCount"]))
         return True
 
     def newProfile(self) -> None:
@@ -165,9 +163,9 @@ class MainMenu(CTK.CTk):
         Validate field's data, return False if a field is invalid.
         If the data is valid return True and save the data to the file.
         '''
-        #Validate data:
+        #Validate profile name:
         if self.currentFilePath == DEFAULTS_PATH: # Nothing to save.
-            PromptWindow(self, "No profile", "Nothing to save, create a new profile first.")
+            PromptWindow(self, "No profile", "No profile open, create a new profile first, or open an exisitng one.")
             return False  
 
         #Construct dictionary from fields:
@@ -209,15 +207,15 @@ class MainMenu(CTK.CTk):
         return True
             
 
-
     def launchGame(self) -> None:
         '''
         Save settings and launch the game
         '''
         if self.saveSettings():
-            #Launch the game.
-            pass
+            #Launch the game with subprocess.
+            subprocess.Popen(["python", "GameName.py", self.currentFilePath])
             #Close the menu.
+            self.destroy()
 
 
     #Button event handlers:
@@ -230,7 +228,6 @@ class MainMenu(CTK.CTk):
     def eventLaunchGame(self, event=None) -> None:
         self.launchGame()
 
-    
 
 app = MainMenu()
 app.mainloop()

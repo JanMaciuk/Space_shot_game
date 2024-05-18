@@ -1,6 +1,8 @@
-import pygame
 from enum import Enum
-import random
+import random, contextlib, sys, json
+with contextlib.redirect_stdout(None):
+    import pygame
+
 
 """
 Assets credits:
@@ -16,19 +18,15 @@ Enemy4: https://www.pngwing.com/en/free-png-muhwz
 
 '''
 TODO features:
-Save settings to file:
-Adjustable difficulty (changing speed and number of enemies and asteroids)
+Auto difficulty mode, increases with score.
 
 Save stats to file:
 Lives, score, ammo, highscore, etc.
 
 Change background to space image
-Add music and sound effects
 Player able to shoot
-Menu for new game, settings, load game, highscore.
 
 '''
-
 # Variables and constants
 SCREEN_WIDTH = 1366
 SCREEN_HEIGHT = 768
@@ -36,15 +34,61 @@ BACKGROUND_COLOR = (0, 0, 0) # Black, we are in space
 PLAYER_RESCALE = 30
 MOVEMENT_SPEED = 5
 FPS = 60
-ASTEROID_COUNT = 10 # The number of asteroids
-ASTEROID_SPRITES = ["Assets\Asteroid1.png", "Assets\Asteroid2.png", "Assets\Asteroid3.png"]
+ASTEROID_SPRITES = [r"Assets\Asteroid1.png", r"Assets\Asteroid2.png", r"Assets\Asteroid3.png"]
 ASTEROID_RESCALE = 10
-ENEMY_COUNT = 2 # The number of enemies on the screen
-ENEMY_SPRITES = ["Assets\Enemy1.png", "Assets\Enemy2.png", "Assets\Enemy3.png", "Assets\Enemy4.png"]
+ENEMY_SPRITES = [r"Assets\Enemy1.png", r"Assets\Enemy2.png", r"Assets\Enemy3.png", r"Assets\Enemy4.png"]
 ENEMY_RESCALE = 6
-ENEMY_TRACKING_SPEED = 2 # How fast enemies move towards the player's x position
-AMMO_COUNT = 1 # The number of collectable ammo boxes on the screen
+DEFAULT_PROFILE_PATH = "default.json"
 main_loop = True
+
+# Can be read from a file, defaults:
+playerScore = 0
+playerHealth = 5
+playerAmmo = 5
+ENEMY_TRACKING_SPEED = 2 # How fast enemies move towards the player's x position
+ENEMY_HEALTH = 2    # How many hits an enemy can take
+ENEMY_COUNT = 2     # The number of enemies on the screen
+ASTEROID_COUNT = 10 # The number of asteroids
+SUPPLY_COUNT = 1    # The number of collectable supply boxes on the screen
+profileFilePath = DEFAULT_PROFILE_PATH
+profileDict = None
+
+#Try reading the profile from command line argument
+def tryReadProfile() -> bool:
+    global profileDict
+    try:
+        profileDict = json.load(open(profileFilePath, "r"))
+        for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "EnemyCount", "AsteroidCount", "SupplyCount"]:
+            if key not in profileDict or not isinstance(profileDict[key], int):
+                raise AssertionError()
+    except:
+        return False
+    return True
+
+
+
+# Try to read the profile from the command line argument
+if len(sys.argv) > 1: 
+    profileFilePath = sys.argv[1]
+    if not tryReadProfile():
+        profileFilePath = DEFAULT_PROFILE_PATH
+
+# If the profile was not loaded, use the default settings
+if not profileDict:
+    print("No valid profile path passed, using default settings.")
+    if not tryReadProfile():
+            # Game cannot run without settings, unrecoverable error
+            raise FileNotFoundError("Unable to read default profile file, verify the file exists and is correctly formatted.")
+
+# Load the profile settings
+playerScore = profileDict["Score"]
+playerHealth = profileDict["Health"]
+playerAmmo = profileDict["Ammo"]
+ENEMY_TRACKING_SPEED = profileDict["EnemySpeed"]
+ENEMY_HEALTH = profileDict["EnemyHealth"]
+ENEMY_COUNT = profileDict["EnemyCount"]
+ASTEROID_COUNT = profileDict["AsteroidCount"]
+SUPPLY_COUNT = profileDict["SupplyCount"]
 
 # Initialize the game
 pygame.init()
@@ -63,25 +107,25 @@ class genericSprite(pygame.sprite.Sprite):
     """
     Generic class for all sprites with basic functionalities that are not type-specific
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def draw(self):
+    def draw(self) -> None:
         screen.blit(self.image, self.rect)
 
-    def moveLeft(self):
+    def moveLeft(self) -> None:
         self.rect.x -= MOVEMENT_SPEED
 
-    def moveRight(self):
+    def moveRight(self) -> None:
         self.rect.x += MOVEMENT_SPEED
 
-    def moveDown(self):
+    def moveDown(self) -> None:
         self.rect.y += MOVEMENT_SPEED
 
-    def reRollPicture(self):
+    def reRollPicture(self) -> None:
         pass   # Will be overridden by objects that change their pictures, avoid isInstance checks
     
-    def positionUp(self):
+    def positionUp(self) -> None:
         # Asteroids have a chance to change their picture
         self.reRollPicture()
         # Bring the sprite to the top, slighty above the frame.
@@ -95,11 +139,11 @@ class genericSprite(pygame.sprite.Sprite):
         
 
 class asteroidSprite(genericSprite):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.positionUp() # Start at the top of the screen and choose a sprite picture
 
-    def reRollPicture(self):
+    def reRollPicture(self) -> None:
         #Change the sprite to a random asteroid
         imageIndex = random.randint(0, len(ASTEROID_SPRITES)-1)
         self.image = pygame.image.load(ASTEROID_SPRITES[imageIndex]).convert_alpha()
@@ -108,11 +152,11 @@ class asteroidSprite(genericSprite):
         self.rect = self.image.get_rect()   # Get new rect after rescaling
 
 class enemySprite(genericSprite):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.positionUp() # Start at the top of the screen and choose a sprite picture
 
-    def reRollPicture(self):
+    def reRollPicture(self) -> None:
         #Change the sprite to a random enemy
         imageIndex = random.randint(0, len(ENEMY_SPRITES)-1)
         self.image = pygame.image.load(ENEMY_SPRITES[imageIndex]).convert_alpha()
@@ -120,7 +164,7 @@ class enemySprite(genericSprite):
         self.image = pygame.transform.scale(self.image, (self.rect.width//ENEMY_RESCALE, self.rect.height//ENEMY_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
 
-    def moveDown(self):
+    def moveDown(self) -> None:
         self.rect.y += MOVEMENT_SPEED
         if self.rect.x < player.rect.x and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
             self.rect.x += ENEMY_TRACKING_SPEED
@@ -128,9 +172,9 @@ class enemySprite(genericSprite):
             self.rect.x -= ENEMY_TRACKING_SPEED
 
 class playerSprite(genericSprite):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.image = pygame.image.load("Assets\Player.png").convert_alpha()
+        self.image = pygame.image.load(r"Assets\Player.png").convert_alpha()
         self.rect = self.image.get_rect()
         self.image = pygame.transform.scale(self.image, (self.rect.width//PLAYER_RESCALE, self.rect.height//PLAYER_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
