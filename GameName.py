@@ -14,17 +14,19 @@ Enemy1: https://toppng.com/free-image/enemy-spaceship-sprite-PNG-free-PNG-Images
 Enemy2: https://www.anyrgb.com/en-clipart-gqgxl
 Enemy3: https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-sprite-png-transparent/
 Enemy4: https://www.pngwing.com/en/free-png-muhwz
+Missile: https://opengameart.org/content/space-shooter-extension-250
 """
 
 '''
 TODO features:
 
 Player health and ammo display.
-Shooting.
-Explosion and respawn on collision (for player just decrease health).
+Manage player health.
+Add supply boxes.
 Save game state to file, main menu process stdin.
 
 Auto difficulty mode, increases with score.
+Everything object-oriented.
 
 '''
 # Variables and constants
@@ -75,7 +77,7 @@ if not profileDict:
 # Load the profile settings
 playerScore = profileDict["Score"]
 PLAYER_HEALTH = profileDict["Health"]
-playerAmmo = profileDict["Ammo"]
+PLAYER_AMMO = profileDict["Ammo"]
 ENEMY_TRACKING_SPEED = profileDict["EnemySpeed"]
 ENEMY_HEALTH = profileDict["EnemyHealth"]
 ASTEROID_DURABILITY = profileDict["AsteroidDurability"]
@@ -88,13 +90,6 @@ pygame.init()
 pygame.display.set_caption("Game Name")
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 allSprites = pygame.sprite.Group()
-
-class object_type(Enum):
-    ASTEROID = 1
-    ENEMY = 2
-    AMMO = 3
-    BULLET = 4    # Maybe?
-    EXPLOSION = 5 # Maybe?
 
 class genericSprite(pygame.sprite.Sprite):
     """
@@ -140,7 +135,6 @@ class genericSprite(pygame.sprite.Sprite):
             self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
             self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         
-
 class asteroidSprite(genericSprite):
     def __init__(self) -> None:
         super().__init__()
@@ -173,9 +167,9 @@ class enemySprite(genericSprite):
 
     def moveDown(self) -> None:
         self.rect.y += MOVEMENT_SPEED
-        if self.rect.x < player.rect.x and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
+        if self.rect.x < player.rect.x-2 and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
             self.rect.x += ENEMY_TRACKING_SPEED
-        elif self.rect.x > player.rect.x and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
+        elif self.rect.x > player.rect.x+2 and not len(pygame.sprite.spritecollide(self, allSprites, False)) > 1:
             self.rect.x -= ENEMY_TRACKING_SPEED
 
 class playerSprite(genericSprite):
@@ -187,12 +181,36 @@ class playerSprite(genericSprite):
         self.image = pygame.transform.scale(self.image, (self.rect.width//PLAYER_RESCALE, self.rect.height//PLAYER_RESCALE))
         self.rect = self.image.get_rect()   # Get new rect after rescaling
         self.rect.center = (SCREEN_WIDTH//2, SCREEN_HEIGHT-self.rect.height) # Start at the bottom center
+        self.ammo = PLAYER_AMMO
 
     def reRollPicture(self) -> None:
         # If this was called on the player, it means he died.
         self.health = 0  # Zero health means a dead player.
         saveProfileQuit()
 
+    def fireMissile(self) -> bool:
+        if self.ammo > 0 and missile.rect.y < 0:
+            missile.setAbovePlayer()
+            self.ammo -= 1
+            return True
+        return False
+
+    def takeDamage(self) -> None:
+        pass #TODO: Implement player damage
+
+class missileSprite(genericSprite):
+    def __init__(self) -> None:
+        super().__init__()
+        self.image = pygame.image.load(r"Assets\Missile.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.positionUp() # Start above the screen, invisible
+    
+    def moveDown(self) -> None:
+        self.rect.y -= MOVEMENT_SPEED   # Movement reversed for bullets
+
+    def setAbovePlayer(self) -> None:
+        ''' Position missle above player '''
+        self.rect.center = (player.rect.centerx, player.rect.centery - player.rect.height)
 
 
 def saveProfileQuit() -> None:
@@ -208,6 +226,9 @@ def saveProfileQuit() -> None:
 # Initialize the game sprites
 player = playerSprite()
 player.draw()
+missile = missileSprite()
+missile.draw()
+allSprites.add(missile)
 allSprites.add(player)
 for _ in range(ASTEROID_COUNT): allSprites.add(asteroidSprite())
 for _ in range(ENEMY_COUNT): allSprites.add(enemySprite())
@@ -220,14 +241,16 @@ while mainLoop:
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
             saveProfileQuit()
 
-    # Check for player movement
+    # Check for player actions
     pressed_keys = pygame.key.get_pressed()
     if pressed_keys[pygame.K_LEFT] and player.rect.x > 0:
         player.moveLeft()
     if pressed_keys[pygame.K_RIGHT] and player.rect.x < SCREEN_WIDTH - player.rect.width:
         player.moveRight()
+    if pressed_keys[pygame.K_SPACE]:
+        player.fireMissile()
 
-    # Move all sprites except the player and bullets down:
+    # Move all other sprites down and check if they collided with the player:
     for sprite in allSprites:
         if sprite != player:
             sprite.moveDown()
@@ -235,8 +258,15 @@ while mainLoop:
                 sprite.positionUp()
             if sprite.rect.colliderect(player.rect):
                 print("Something collided with the player")
+                player.takeDamage()
+                sprite.positionUp()
     
-    #Check for coliisions
+    #Check for missile hit:
+    for sprite in allSprites:
+        if sprite != missile and sprite != player:
+            if missile.rect.colliderect(sprite.rect):
+                sprite.takeDamage()
+                missile.positionUp()
 
 
     
