@@ -21,12 +21,10 @@ Missile: https://opengameart.org/content/space-shooter-extension-250
 TODO features:
 
 Player health and ammo display.
-Manage player health.
 Add supply boxes.
-Save game state to file, main menu process stdin.
 
 Auto difficulty mode, increases with score.
-Everything object-oriented.
+Everything typed?
 
 '''
 # Variables and constants
@@ -275,7 +273,10 @@ class playerSprite(genericSprite):
         return False
 
     def takeDamage(self) -> None:
-        pass #TODO: Implement player damage
+        if self.health <= 1:
+            self.GI.saveProfileQuit()
+        else:
+            self.health -= 1
 
 class missileSprite(genericSprite):
     def __init__(self, gameInstance) -> None:
