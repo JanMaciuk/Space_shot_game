@@ -15,6 +15,9 @@ Enemy2: https://www.anyrgb.com/en-clipart-gqgxl
 Enemy3: https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-sprite-png-transparent/
 Enemy4: https://www.pngwing.com/en/free-png-muhwz
 Missile: https://opengameart.org/content/space-shooter-extension-250
+Heart: https://www.pngegg.com/en/png-invqg
+SupplyBox: https://www.kindpng.com/imgv/hTmRmoh_ammunition-box-commando-ammo-box-pixel-art-hd/
+
 """
 
 '''
