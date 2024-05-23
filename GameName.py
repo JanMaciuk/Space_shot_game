@@ -1,5 +1,5 @@
 from enum import Enum
-import random, contextlib, sys, json
+import random, contextlib, sys, json, subprocess
 with contextlib.redirect_stdout(None):
     import pygame
 
@@ -99,6 +99,7 @@ class Game():
         return True
     
     def mainLoop(self) -> None:
+        scoreGiveIn = FPS
         while self.doLoop:
             # Check for game exit command
             for event in pygame.event.get():
@@ -132,6 +133,12 @@ class Game():
                         sprite.takeDamage()
                         self.missile.positionUp()
 
+            #Increase player score
+            scoreGiveIn -= 1
+            if scoreGiveIn == 0:
+                self.playerScore += 1
+                scoreGiveIn = FPS
+
             # Draw a new frame
             self.screen.blit(BACKGROUND_IMAGE, (0, 0))
             self.allSprites.draw(self.screen)
@@ -144,7 +151,20 @@ class Game():
         Then open the main menu passing current profile path as argument
         '''
         self.doLoop = False    # Exit the game loop
-        #TODO: Save the current results to the profile file
+        
+        if self.profileFilePath != DEFAULT_PROFILE_PATH:    # Nothing to save if not using a profile file
+            # Save players statistics, don't change difficulty settings
+            self.profileDict["Score"] = self.playerScore
+            self.profileDict["Health"] = self.player.health
+            self.profileDict["Ammo"] = self.player.ammo
+            try:
+                with open(self.profileFilePath, "w") as file:
+                    json.dump(self.profileDict, file)
+            except:
+                # Ignore save error, the game is exiting anyway
+                print("Debug log: Error saving score, game exiting.")
+        # Open the main menu
+        subprocess.Popen(["python", "Menu.py", self.profileFilePath])
         pygame.quit()
         sys.exit()
 

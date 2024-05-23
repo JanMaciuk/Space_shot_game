@@ -1,5 +1,5 @@
 import customtkinter as CTK
-import re, os, json, subprocess
+import re, os, json, subprocess, sys
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
@@ -31,9 +31,14 @@ class MainMenu(CTK.CTk):
         self.title(WINDOW_TITLE)
         self.frame = CTK.CTkFrame(self)
         self.frame.grid()
-        self.currentFilePath:str = DEFAULTS_PATH
         self.initializeLayout()
-        self.loadSettings(DEFAULTS_PATH)
+        self.currentFilePath:str = DEFAULTS_PATH
+        # If a file was passed and loading it succeeds, set it as current file.
+        # Otherwise ignore the passed string and load defaults.
+        if (len(sys.argv) > 1) and self.loadSettings(sys.argv[1]):   
+            self.currentFilePath:str = sys.argv[1]
+        else:
+            self.loadSettings(DEFAULTS_PATH)
 
     def initializeLayout(self) -> None:
         '''
@@ -213,14 +218,16 @@ class MainMenu(CTK.CTk):
         except:
             PromptWindow(self, "Save error", "File save profile, make sure the file is not open in another program or write protected.")
             return False
-        return True
-            
+        return True     
 
     def launchGame(self) -> None:
         '''
         Save settings and launch the game
         '''
         if self.saveSettings():
+            if int(self.health.cget("text") <= 0):
+                PromptWindow(self, "Game over", "Player died, game over, create a new profile.")
+                return
             #Launch the game with subprocess.
             subprocess.Popen(["python", "GameName.py", self.currentFilePath])
             #Close the menu.
