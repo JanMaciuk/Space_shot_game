@@ -1,4 +1,3 @@
-from enum import Enum
 import random, contextlib, sys, json, subprocess, ctypes
 with contextlib.redirect_stdout(None):
     import pygame
@@ -6,18 +5,17 @@ with contextlib.redirect_stdout(None):
 
 """
 Assets credits:
-Player: https://opengameart.org/content/skull-in-a-ufo-spacecraft
+Player:    https://opengameart.org/content/skull-in-a-ufo-spacecraft
 Asteroid1: https://clipart-library.com/clip-art/168-1688863_clip-free-png-images-transparent-free-download-pngmart.htm
 Asteroid2: https://www.hiclipart.com/free-transparent-background-png-clipart-dplug
 Asteroid3: https://www.pngwing.com/en/free-png-zvitc
-Enemy1: https://toppng.com/free-image/enemy-spaceship-sprite-PNG-free-PNG-Images_170745
-Enemy2: https://www.anyrgb.com/en-clipart-gqgxl
-Enemy3: https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-sprite-png-transparent/
-Enemy4: https://www.pngwing.com/en/free-png-muhwz
-Missile: https://opengameart.org/content/space-shooter-extension-250
-Heart: https://www.pngegg.com/en/png-invqg
+Enemy1:    https://toppng.com/free-image/enemy-spaceship-sprite-PNG-free-PNG-Images_170745
+Enemy2:    https://www.anyrgb.com/en-clipart-gqgxl
+Enemy3:    https://www.kindpng.com/imgv/TohbRh_download-2d-spaceship-png-spaceship-sprite-png-transparent/
+Enemy4:    https://www.pngwing.com/en/free-png-muhwz
+Missile:   https://opengameart.org/content/space-shooter-extension-250
+Heart:     https://www.pngegg.com/en/png-invqg
 SupplyBox: https://www.kindpng.com/imgv/hTmRmoh_ammunition-box-commando-ammo-box-pixel-art-hd/
-
 """
 
 '''
@@ -26,7 +24,6 @@ TODO features:
 Player health and ammo display.
 Add supply boxes.
 
-Auto difficulty mode, increases with score.
 Github readme.
 Everything typed?
 
@@ -49,6 +46,10 @@ BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREE
 
 class Game():
     def __init__(self) -> None:
+        self.displayedAmmo = 0
+        self.ammoSprites = pygame.sprite.Group()
+        self.displayedHealth = 0
+        self.healthSprites = pygame.sprite.Group()
         self.doLoop = True
         self.profileFilePath = DEFAULT_PROFILE_PATH
         self.profileDict = None
@@ -78,16 +79,16 @@ class Game():
         pygame.init()
         pygame.display.set_caption("Game Name")
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.allSprites = pygame.sprite.Group()
+        self.allPhysicalSprites = pygame.sprite.Group()
         # Initialize the game sprites
         self.player = playerSprite(self)
         self.player.draw()
         self.missile = missileSprite(self)
         self.missile.draw()
-        self.allSprites.add(self.missile)
-        self.allSprites.add(self.player)
-        for _ in range(self.ASTEROID_COUNT): self.allSprites.add(asteroidSprite(self))
-        for _ in range(self.ENEMY_COUNT): self.allSprites.add(enemySprite(self))
+        self.allPhysicalSprites.add(self.missile)
+        self.allPhysicalSprites.add(self.player)
+        for _ in range(self.ASTEROID_COUNT): self.allPhysicalSprites.add(asteroidSprite(self))
+        for _ in range(self.ENEMY_COUNT): self.allPhysicalSprites.add(enemySprite(self))
         ctypes.windll.user32.SetForegroundWindow(pygame.display.get_wm_info()['window']) # Focus the game window
         self.mainLoop()
     
@@ -119,7 +120,7 @@ class Game():
                 self.player.fireMissile()
 
             # Move all other sprites down and check if they collided with the player:
-            for sprite in self.allSprites:
+            for sprite in self.allPhysicalSprites:
                 if sprite != self.player:
                     sprite.moveDown()
                     if sprite.rect.y > SCREEN_HEIGHT:
@@ -130,7 +131,7 @@ class Game():
                         sprite.positionUp()
             
             #Check for missile hit:
-            for sprite in self.allSprites:
+            for sprite in self.allPhysicalSprites:
                 if sprite != self.missile and sprite != self.player:
                     if self.missile.rect.colliderect(sprite.rect):
                         sprite.takeDamage()
@@ -142,9 +143,15 @@ class Game():
                 self.playerScore += 1
                 scoreGiveIn = FPS
 
+            #Update ammo and health indicators:
+            self.updateAmmoIndicator()
+            self.updateHealthIndicator()
+
             # Draw a new frame
             self.screen.blit(BACKGROUND_IMAGE, (0, 0))
-            self.allSprites.draw(self.screen)
+            self.allPhysicalSprites.draw(self.screen)
+            self.ammoSprites.draw(self.screen)
+            self.healthSprites.draw(self.screen)
             pygame.time.Clock().tick(FPS)
             pygame.display.update()
 
@@ -170,6 +177,28 @@ class Game():
         subprocess.Popen(["python", "Menu.py", self.profileFilePath])
         pygame.quit()
         sys.exit()
+
+    def updateAmmoIndicator(self) -> None:
+        '''Make the displayed ammo match the player's ammo, by adding or deleting ammo sprites'''
+        while self.displayedAmmo < self.player.ammo:
+            newAmmoSprite = IndicatorSprite(self, r"Assets\Missile.png")
+            newAmmoSprite.rect.x = self.displayedAmmo * newAmmoSprite.rect.width
+            self.ammoSprites.add(newAmmoSprite)
+            self.displayedAmmo += 1
+        while self.displayedAmmo > self.player.ammo:
+            self.ammoSprites.remove(self.ammoSprites.sprites()[-1])
+            self.displayedAmmo -= 1
+
+    def updateHealthIndicator(self) -> None:
+        '''Make the displayed health match the player's health, by adding or deleting health sprites'''
+        while self.displayedHealth < self.player.health:
+            newHealthSprite = IndicatorSprite(self, r"Assets\Heart.png")
+            newHealthSprite.rect.x = SCREEN_WIDTH - (self.displayedHealth * newHealthSprite.rect.width) - newHealthSprite.rect.width
+            self.healthSprites.add(newHealthSprite)
+            self.displayedHealth += 1
+        while self.displayedHealth > self.player.health:
+            self.healthSprites.remove(self.healthSprites.sprites()[-1])
+            self.displayedHealth -= 1
 
 class genericSprite(pygame.sprite.Sprite):
     """
@@ -212,7 +241,7 @@ class genericSprite(pygame.sprite.Sprite):
         # Move object to random x position
         self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
         # If the move caused a collision, try again
-        while len(pygame.sprite.spritecollide(self, self.GI.allSprites, False)) > 1:
+        while len(pygame.sprite.spritecollide(self, self.GI.allPhysicalSprites, False)) > 1:
             self.rect.x = random.randint(0, SCREEN_WIDTH-self.rect.width)
             self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         
@@ -248,9 +277,9 @@ class enemySprite(genericSprite):
 
     def moveDown(self) -> None:
         self.rect.y += MOVEMENT_SPEED
-        if self.rect.x < self.GI.player.rect.x-2 and not len(pygame.sprite.spritecollide(self, self.GI.allSprites, False)) > 1:
+        if self.rect.x < self.GI.player.rect.x-2 and not len(pygame.sprite.spritecollide(self, self.GI.allPhysicalSprites, False)) > 1:
             self.rect.x += self.GI.ENEMY_TRACKING_SPEED
-        elif self.rect.x > self.GI.player.rect.x+2 and not len(pygame.sprite.spritecollide(self, self.GI.allSprites, False)) > 1:
+        elif self.rect.x > self.GI.player.rect.x+2 and not len(pygame.sprite.spritecollide(self, self.GI.allPhysicalSprites, False)) > 1:
             self.rect.x -= self.GI.ENEMY_TRACKING_SPEED
 
 class playerSprite(genericSprite):
@@ -296,4 +325,12 @@ class missileSprite(genericSprite):
         ''' Position missle above player '''
         self.rect.center = (self.GI.player.rect.centerx, self.GI.player.rect.centery - self.GI.player.rect.height)
 
+class IndicatorSprite(pygame.sprite.Sprite):
+    '''Not a physical sprite, only used to display statistics'''
+    def __init__(self, gameInstance, assetPath) -> None:
+        super().__init__()
+        self.GI = gameInstance
+        self.image = pygame.image.load(assetPath).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.rect.y = SCREEN_HEIGHT-self.rect.height
 Game()
