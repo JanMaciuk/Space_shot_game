@@ -24,6 +24,7 @@ Player health and ammo display.
 Add supply boxes.
 
 Auto difficulty mode, increases with score.
+Github readme.
 Everything typed?
 
 '''

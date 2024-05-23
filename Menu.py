@@ -1,9 +1,10 @@
+from enum import auto
 import customtkinter as CTK
 import re, os, json, subprocess, sys
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
-WINDOW_RESOLUTION = "350x440"
+WINDOW_RESOLUTION = "350x475"
 WINDOW_TITLE = "Main menu"
 DEFAULTS_PATH = "default.json"
 FONT_BUTTON = ("Arial", 22)
@@ -49,11 +50,14 @@ class MainMenu(CTK.CTk):
         buttonSelectProfile = CTK.CTkButton(self.frame, text="Select profile", command=self.eventSelectProfile, font=FONT_BUTTON, width=WIDTH_BUTTON)
         buttonSaveSettings =  CTK.CTkButton(self.frame, text="Save settings", command=self.eventSaveSettings, font=FONT_BUTTON, width=WIDTH_BUTTON)
         buttonLaunchGame =    CTK.CTkButton(self.frame, text="Launch game", command=self.eventLaunchGame, font=FONT_BUTTON, width=WIDTH_BUTTON)
+        launchAutoDifficulty = CTK.CTkButton(self.frame, text="Launch with auto difficulty", command=self.eventLaunchGameAutoDifficulty, font=FONT_BUTTON, width=WIDTH_BUTTON)
+        
 
         buttonNewProfile.grid(    row=0, column=0, columnspan=2 )
         buttonSelectProfile.grid( row=1, column=0, columnspan=2 )
         buttonSaveSettings.grid(  row=2, column=0, columnspan=2 )
         buttonLaunchGame.grid(    row=3, column=0, columnspan=2 )
+        launchAutoDifficulty.grid(row=4, column=0, columnspan=2)
 
         #Read only fields:
         labelProfile = CTK.CTkLabel(self.frame, text="Open profile: ", font=FONT_LABEL)
@@ -65,14 +69,14 @@ class MainMenu(CTK.CTk):
         labelAmmo =   CTK.CTkLabel(self.frame, text="Ammo: ", font=FONT_LABEL)
         self.ammo =   CTK.CTkLabel(self.frame, text= " ")
 
-        labelProfile.grid( row=4, column=0 )
-        self.profile.grid( row=4, column=1 )
-        labelScore.grid(   row=5, column=0 )
-        self.score.grid(   row=5, column=1 )
-        labelHealth.grid(  row=6, column=0 )
-        self.health.grid(  row=6, column=1 )
-        labelAmmo.grid(    row=7, column=0 )
-        self.ammo.grid(    row=7, column=1 )
+        labelProfile.grid( row=5, column=0 )
+        self.profile.grid( row=5, column=1 )
+        labelScore.grid(   row=6, column=0 )
+        self.score.grid(   row=6, column=1 )
+        labelHealth.grid(  row=7, column=0 )
+        self.health.grid(  row=7, column=1 )
+        labelAmmo.grid(    row=8, column=0 )
+        self.ammo.grid(    row=8, column=1 )
 
         #Editable fields:
         labelEnemySpeed = CTK.CTkLabel(self.frame, text="Enemy maneuverability: ", font=FONT_LABEL)
@@ -88,21 +92,22 @@ class MainMenu(CTK.CTk):
         labelAmmoCount =  CTK.CTkLabel(self.frame, text="Supply box spawn frequency: ", font=FONT_LABEL)
         self.supplyCount =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
 
-        labelEnemySpeed.grid( row=8, column=0 )
-        self.enemySpeed.grid( row=8, column=1 )
-        labelEnemyHP.grid(    row=9, column=0 )
-        self.enemyHP.grid(    row=9, column=1 )
-        labelAsteroidHP.grid( row=10, column=0 )
-        self.asteroidHP.grid( row=10, column=1 )
-        labelEnemies.grid(    row=11, column=0 )
-        self.enemies.grid(    row=11, column=1 )
-        labelAsteroids.grid(  row=12, column=0 )
-        self.asteroids.grid(  row=12, column=1 )
-        labelAmmoCount.grid(  row=13, column=0 )
-        self.supplyCount.grid(row=13, column=1 )
+        labelEnemySpeed.grid( row=9, column=0 )
+        self.enemySpeed.grid( row=9, column=1 )
+        labelEnemyHP.grid(    row=10, column=0 )
+        self.enemyHP.grid(    row=10, column=1 )
+        labelAsteroidHP.grid( row=11, column=0 )
+        self.asteroidHP.grid( row=11, column=1 )
+        labelEnemies.grid(    row=12, column=0 )
+        self.enemies.grid(    row=12, column=1 )
+        labelAsteroids.grid(  row=13, column=0 )
+        self.asteroids.grid(  row=13, column=1 )
+        labelAmmoCount.grid(  row=14, column=0 )
+        self.supplyCount.grid(row=14, column=1 )
+        
         
         exitButton = CTK.CTkButton(self.frame, text="Quit game", command=self.destroy, font=FONT_BUTTON, width=WIDTH_BUTTON)
-        exitButton.grid(row=14, column=0, columnspan=2)
+        exitButton.grid(row=15, column=0, columnspan=2)
 
     def loadSettings(self, filePath:str) -> bool:
         '''
@@ -171,7 +176,7 @@ class MainMenu(CTK.CTk):
         #Load the new file:
         self.loadSettings(filePath)
 
-    def saveSettings(self) -> bool:
+    def saveSettings(self, autoDifficulty=False) -> bool:
         '''
         Validate field's data, return False if a field is invalid.
         If the data is valid return True and save the data to the file.
@@ -182,34 +187,102 @@ class MainMenu(CTK.CTk):
             return False  
 
         #Construct dictionary from fields:
-        try:
-            dict = {
-                "Score": int(self.score.cget("text")),
-                "Health": int(self.health.cget("text")),
-                "Ammo": int(self.ammo.cget("text")),
-                "EnemySpeed": {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
-                "EnemyHealth": {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
-                "AsteroidDurability": {"Low":1, "Medium":2, "High":3}[self.asteroidHP.get()],
-                "EnemyCount": int(self.enemies.get()),
-                "AsteroidCount": int(self.asteroids.get()),
-                "SupplyCount": int(self.supplyCount.get())
-            }
-        except:
-            PromptWindow(self, "Invalid data", "Invalid data entered, check that values of textboxes are integers.")
-            return False
-        
-        #Validate the read data:
-        #Check fields where user can't enter his own values, if they are out of bounds, save file was likely tampered with.
-        if  ((dict["Score"] < 0) or (dict["Health"] < 0) or (dict["Ammo"] < 0) or
-            (dict["EnemySpeed"] not in [1, 2, 3]) or (dict["EnemyHealth"] not in [1, 2, 3]) or (dict["AsteroidDurability"] not in [1, 2, 3])):
-            PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
-            return False
-        
-        #Check fields where user can enter his own values:
-        if  ((dict["EnemyCount"] < 1) or (dict["AsteroidCount"] < 1) or (dict["SupplyCount"] < 1) or
-             (dict["EnemyCount"] > 12) or (dict["AsteroidCount"] > 12) or (dict["SupplyCount"] > 12)):
-            PromptWindow(self, "Invalid data", "Spawn frequencies out of range, check that they are between 1 and 12.")
-            return False
+        if not autoDifficulty:
+            try:
+                dict = {
+                    "Score": int(self.score.cget("text")),
+                    "Health": int(self.health.cget("text")),
+                    "Ammo": int(self.ammo.cget("text")),
+                    "EnemySpeed": {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
+                    "EnemyHealth": {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
+                    "AsteroidDurability": {"Low":1, "Medium":2, "High":3}[self.asteroidHP.get()],
+                    "EnemyCount": int(self.enemies.get()),
+                    "AsteroidCount": int(self.asteroids.get()),
+                    "SupplyCount": int(self.supplyCount.get()),
+                }
+            except:
+                PromptWindow(self, "Invalid data", "Invalid data entered, check that values of textboxes are integers.")
+                return False
+            
+            #Validate the read data:
+            #Check fields where user can't enter his own values, if they are out of bounds, save file was likely tampered with.
+            if  ((dict["Score"] < 0) or (dict["Health"] < 0) or (dict["Ammo"] < 0) or
+                (dict["EnemySpeed"] not in [1, 2, 3]) or (dict["EnemyHealth"] not in [1, 2, 3]) or (dict["AsteroidDurability"] not in [1, 2, 3])):
+                PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
+                return False
+            
+            #Check fields where user can enter his own values:
+            if  ((dict["EnemyCount"] < 1) or (dict["AsteroidCount"] < 1) or (dict["SupplyCount"] < 1) or
+                (dict["EnemyCount"] > 12) or (dict["AsteroidCount"] > 12) or (dict["SupplyCount"] > 12)):
+                PromptWindow(self, "Invalid data", "Spawn frequencies out of range, check that they are between 1 and 12.")
+                return False
+        else:
+            #Automatic difficulty based on score:
+            try:
+                score = int(self.score.cget("text"))
+                if score < 30:
+                    dict = {
+                        "Score": score,
+                        "Health": int(self.health.cget("text")),
+                        "Ammo": int(self.ammo.cget("text")),
+                        "EnemySpeed": 1,
+                        "EnemyHealth": 1,
+                        "AsteroidDurability": 1,
+                        "EnemyCount": 1,
+                        "AsteroidCount": 5,
+                        "SupplyCount": 2,
+                    }
+                elif score < 60:
+                    dict = {
+                        "Score": score,
+                        "Health": int(self.health.cget("text")),
+                        "Ammo": int(self.ammo.cget("text")),
+                        "EnemySpeed": 2,
+                        "EnemyHealth": 2,
+                        "AsteroidDurability": 1,
+                        "EnemyCount": 2,
+                        "AsteroidCount": 7,
+                        "SupplyCount": 2,
+                    }
+                elif score < 120:
+                    dict = {
+                        "Score": score,
+                        "Health": int(self.health.cget("text")),
+                        "Ammo": int(self.ammo.cget("text")),
+                        "EnemySpeed": 2,
+                        "EnemyHealth": 2,
+                        "AsteroidDurability": 1,
+                        "EnemyCount": 2,
+                        "AsteroidCount": 10,
+                        "SupplyCount": 1,
+                    }
+                elif score < 250:
+                    dict = {
+                        "Score": score,
+                        "Health": int(self.health.cget("text")),
+                        "Ammo": int(self.ammo.cget("text")),
+                        "EnemySpeed": 2,
+                        "EnemyHealth": 2,
+                        "AsteroidDurability": 1,
+                        "EnemyCount": 3,
+                        "AsteroidCount": 10,
+                        "SupplyCount": 1,
+                    }
+                else:
+                    dict = {
+                        "Score": score,
+                        "Health": int(self.health.cget("text")),
+                        "Ammo": int(self.ammo.cget("text")),
+                        "EnemySpeed": 3,
+                        "EnemyHealth": 2,
+                        "AsteroidDurability": 2,
+                        "EnemyCount": 3,
+                        "AsteroidCount": 12,
+                        "SupplyCount": 1,
+                    }
+            except:
+                PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
+                return False
 
         #Save data to json file:
         try:
@@ -220,12 +293,12 @@ class MainMenu(CTK.CTk):
             return False
         return True     
 
-    def launchGame(self) -> None:
+    def launchGame(self, autoDifficulty=False) -> None:
         '''
         Save settings and launch the game
         '''
-        if self.saveSettings():
-            if int(self.health.cget("text")) <= 0:
+        if self.saveSettings(autoDifficulty):
+            if int(self.health.cget("text")) <= 0:  # health is validated to be a number in saveSettings.
                 PromptWindow(self, "Game over", "Player died, game over, create a new profile.")
                 return
             #Launch the game with subprocess.
@@ -243,7 +316,8 @@ class MainMenu(CTK.CTk):
         self.saveSettings()
     def eventLaunchGame(self, event=None) -> None:
         self.launchGame()
-
+    def eventLaunchGameAutoDifficulty(self, event=None) -> None:
+        self.launchGame(autoDifficulty=True)
 
 app = MainMenu()
 app.mainloop()
