@@ -225,7 +225,7 @@ class MainMenu(CTK.CTk):
         Save settings and launch the game
         '''
         if self.saveSettings():
-            if int(self.health.cget("text") <= 0):
+            if int(self.health.cget("text")) <= 0:
                 PromptWindow(self, "Game over", "Player died, game over, create a new profile.")
                 return
             #Launch the game with subprocess.

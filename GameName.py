@@ -1,5 +1,5 @@
 from enum import Enum
-import random, contextlib, sys, json, subprocess
+import random, contextlib, sys, json, subprocess, ctypes
 with contextlib.redirect_stdout(None):
     import pygame
 
@@ -86,6 +86,7 @@ class Game():
         self.allSprites.add(self.player)
         for _ in range(self.ASTEROID_COUNT): self.allSprites.add(asteroidSprite(self))
         for _ in range(self.ENEMY_COUNT): self.allSprites.add(enemySprite(self))
+        ctypes.windll.user32.SetForegroundWindow(pygame.display.get_wm_info()['window']) # Focus the game window
         self.mainLoop()
     
     def tryReadProfile(self) -> bool:
