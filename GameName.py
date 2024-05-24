@@ -35,6 +35,7 @@ MOVEMENT_SPEED = 5
 FPS = 60
 ASTEROID_SPRITES = [r"Assets\Asteroid1.png", r"Assets\Asteroid2.png", r"Assets\Asteroid3.png"]
 ASTEROID_RESCALE = 10
+SUPPLYBOX_RESCALE = 16
 ENEMY_SPRITES = [r"Assets\Enemy1.png", r"Assets\Enemy2.png", r"Assets\Enemy3.png", r"Assets\Enemy4.png"]
 ENEMY_RESCALE = 6
 DEFAULT_PROFILE_PATH = "default.json"
@@ -74,6 +75,7 @@ class Game():
         self.ENEMY_COUNT = self.profileDict["EnemyCount"]
         self.ASTEROID_COUNT = self.profileDict["AsteroidCount"]
         self.SUPPLY_COUNT = self.profileDict["SupplyCount"]
+        self.HEALTH_PROBABILITY = 20    # TODO
         # Initialize the game
         pygame.init()
         pygame.display.set_caption("Game Name")
@@ -88,6 +90,7 @@ class Game():
         self.allPhysicalSprites.add(self.player)
         for _ in range(self.ASTEROID_COUNT): self.allPhysicalSprites.add(asteroidSprite(self))
         for _ in range(self.ENEMY_COUNT): self.allPhysicalSprites.add(enemySprite(self))
+        for _ in range(self.SUPPLY_COUNT): self.allPhysicalSprites.add(supplySprite(self))
         ctypes.windll.user32.SetForegroundWindow(pygame.display.get_wm_info()['window']) # Focus the game window
         self.mainLoop()
     
@@ -126,15 +129,17 @@ class Game():
                         sprite.positionUp()
                     if sprite.rect.colliderect(self.player.rect):
                         print("Something collided with the player")
-                        self.player.takeDamage()
+                        if not isinstance(sprite, supplySprite):
+                            self.player.takeDamage()
+                        else:
+                            self.player.collectSupplyBox()
                         sprite.positionUp()
             
             #Check for missile hit:
             for sprite in self.allPhysicalSprites:
-                if sprite != self.missile and sprite != self.player:
-                    if self.missile.rect.colliderect(sprite.rect):
-                        sprite.takeDamage()
-                        self.missile.positionUp()
+                if sprite != self.missile and sprite != self.player and self.missile.rect.colliderect(sprite.rect):
+                    sprite.takeDamage()
+                    self.missile.positionUp()
 
             #Increase player score
             scoreGiveIn -= 1
@@ -310,6 +315,14 @@ class playerSprite(genericSprite):
         else:
             self.health -= 1
 
+    def collectSupplyBox(self) -> None:
+        '''Add health or ammo to the player, depending on health probability parameter'''
+        randomnumber = random.randint(0, 100)
+        if randomnumber < self.GI.HEALTH_PROBABILITY:
+            self.health += 1
+        else:
+            self.ammo += 1
+
 class missileSprite(genericSprite):
     def __init__(self, gameInstance) -> None:
         super().__init__(gameInstance)
@@ -323,6 +336,15 @@ class missileSprite(genericSprite):
     def setAbovePlayer(self) -> None:
         ''' Position missle above player '''
         self.rect.center = (self.GI.player.rect.centerx, self.GI.player.rect.centery - self.GI.player.rect.height)
+
+class supplySprite(genericSprite):
+    def __init__(self, gameInstance):
+        super().__init__(gameInstance)
+        self.image = pygame.image.load(r"Assets\SupplyBox.png").convert_alpha()
+        self.rect = self.image.get_rect()
+        self.image = pygame.transform.scale(self.image, (self.rect.width//SUPPLYBOX_RESCALE, self.rect.height//SUPPLYBOX_RESCALE))
+        self.rect = self.image.get_rect()
+        self.positionUp()
 
 class IndicatorSprite(pygame.sprite.Sprite):
     '''Not a physical sprite, only used to display statistics'''

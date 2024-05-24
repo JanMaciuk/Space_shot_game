@@ -7,5 +7,6 @@
     "AsteroidDurability": 1,
     "EnemyCount": 2,
     "AsteroidCount": 10,
-    "SupplyCount": 1
+    "SupplyCount": 1,
+    "HealthProbability": 15
 }

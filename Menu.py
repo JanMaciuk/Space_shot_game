@@ -4,7 +4,7 @@ import re, os, json, subprocess, sys
 from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
-WINDOW_RESOLUTION = "350x475"
+WINDOW_RESOLUTION = "350x500"
 WINDOW_TITLE = "Main menu"
 DEFAULTS_PATH = "default.json"
 FONT_BUTTON = ("Arial", 22)
@@ -90,7 +90,9 @@ class MainMenu(CTK.CTk):
         labelAsteroids =  CTK.CTkLabel(self.frame, text="Asteroid spawn frequency: ", font=FONT_LABEL)
         self.asteroids =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
         labelAmmoCount =  CTK.CTkLabel(self.frame, text="Supply box spawn frequency: ", font=FONT_LABEL)
-        self.supplyCount =  CTK.CTkEntry(self.frame, font=FONT_LABEL)
+        self.supplyCount= CTK.CTkEntry(self.frame, font=FONT_LABEL)
+        labelHealthProb = CTK.CTkLabel(self.frame, text="Supply box medkit probability: ", font=FONT_LABEL)
+        self.healthProb = CTK.CTkEntry(self.frame, font=FONT_LABEL)
 
         labelEnemySpeed.grid( row=9, column=0 )
         self.enemySpeed.grid( row=9, column=1 )
@@ -104,10 +106,12 @@ class MainMenu(CTK.CTk):
         self.asteroids.grid(  row=13, column=1 )
         labelAmmoCount.grid(  row=14, column=0 )
         self.supplyCount.grid(row=14, column=1 )
+        labelHealthProb.grid( row=15, column=0 )
+        self.healthProb.grid( row=15, column=1 )
         
         
         exitButton = CTK.CTkButton(self.frame, text="Quit game", command=self.destroy, font=FONT_BUTTON, width=WIDTH_BUTTON)
-        exitButton.grid(row=15, column=0, columnspan=2)
+        exitButton.grid(row=16, column=0, columnspan=2)
 
     def loadSettings(self, filePath:str) -> bool:
         '''
@@ -116,7 +120,7 @@ class MainMenu(CTK.CTk):
         #Try to read data from the file, checks both file path and file content.
         try:
             profileDict = json.load(open(filePath, "r"))
-            for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "AsteroidDurability", "EnemyCount", "AsteroidCount", "SupplyCount"]:
+            for key in ["Score", "Health", "Ammo", "EnemySpeed", "EnemyHealth", "AsteroidDurability", "EnemyCount", "AsteroidCount", "SupplyCount","HealthProbability"]:
                 if key not in profileDict or not isinstance(profileDict[key], int):
                     raise AssertionError()
 
@@ -149,6 +153,8 @@ class MainMenu(CTK.CTk):
         self.asteroids.insert(0, str(profileDict["AsteroidCount"]))
         self.supplyCount.delete(0, "end")
         self.supplyCount.insert(0, str(profileDict["SupplyCount"]))
+        self.healthProb.delete(0, "end")
+        self.healthProb.insert(0, str(profileDict["HealthProbability"]))
         return True
 
     def newProfile(self) -> None:
@@ -190,15 +196,16 @@ class MainMenu(CTK.CTk):
         if not autoDifficulty:
             try:
                 dict = {
-                    "Score": int(self.score.cget("text")),
-                    "Health": int(self.health.cget("text")),
-                    "Ammo": int(self.ammo.cget("text")),
-                    "EnemySpeed": {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
-                    "EnemyHealth": {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
-                    "AsteroidDurability": {"Low":1, "Medium":2, "High":3}[self.asteroidHP.get()],
-                    "EnemyCount": int(self.enemies.get()),
-                    "AsteroidCount": int(self.asteroids.get()),
-                    "SupplyCount": int(self.supplyCount.get()),
+                    "Score":             int(self.score.cget("text")),
+                    "Health":            int(self.health.cget("text")),
+                    "Ammo":              int(self.ammo.cget("text")),
+                    "EnemySpeed":        {"Low":1, "Medium":2, "High":3}[self.enemySpeed.get()],
+                    "EnemyHealth":       {"Low":1, "Medium":2, "High":3}[self.enemyHP.get()],
+                    "AsteroidDurability":{"Low":1, "Medium":2, "High":3}[self.asteroidHP.get()],
+                    "EnemyCount":        int(self.enemies.get()),
+                    "AsteroidCount":     int(self.asteroids.get()),
+                    "SupplyCount":       int(self.supplyCount.get()),
+                    "HealthProbability": int(self.healthProb.get())
                 }
             except:
                 PromptWindow(self, "Invalid data", "Invalid data entered, check that values of textboxes are integers.")
@@ -212,9 +219,9 @@ class MainMenu(CTK.CTk):
                 return False
             
             #Check fields where user can enter his own values:
-            if  ((dict["EnemyCount"] < 1) or (dict["AsteroidCount"] < 1) or (dict["SupplyCount"] < 1) or
-                (dict["EnemyCount"] > 12) or (dict["AsteroidCount"] > 12) or (dict["SupplyCount"] > 12)):
-                PromptWindow(self, "Invalid data", "Spawn frequencies out of range, check that they are between 1 and 12.")
+            if  ((dict["EnemyCount"] < 1) or (dict["AsteroidCount"] < 1) or (dict["SupplyCount"] < 1) or (dict["HealthProbability"] < 0) or
+                (dict["EnemyCount"] > 12) or (dict["AsteroidCount"] > 12) or (dict["SupplyCount"] > 12)or (dict["HealthProbability"] > 100)):
+                PromptWindow(self, "Invalid data", "Spawn frequencies out of range, check that they are between 1 and 12. And probabilities are 1 to 100%")
                 return False
         else:
             #Automatic difficulty based on score:
@@ -231,6 +238,7 @@ class MainMenu(CTK.CTk):
                         "EnemyCount": 1,
                         "AsteroidCount": 5,
                         "SupplyCount": 2,
+                        "HealthProbability": 50
                     }
                 elif score < 60:
                     dict = {
@@ -243,6 +251,7 @@ class MainMenu(CTK.CTk):
                         "EnemyCount": 2,
                         "AsteroidCount": 7,
                         "SupplyCount": 2,
+                        "HealthProbability": 20
                     }
                 elif score < 120:
                     dict = {
@@ -255,6 +264,7 @@ class MainMenu(CTK.CTk):
                         "EnemyCount": 2,
                         "AsteroidCount": 10,
                         "SupplyCount": 1,
+                        "HealthProbability": 15
                     }
                 elif score < 250:
                     dict = {
@@ -267,6 +277,7 @@ class MainMenu(CTK.CTk):
                         "EnemyCount": 3,
                         "AsteroidCount": 10,
                         "SupplyCount": 1,
+                        "HealthProbability": 10
                     }
                 else:
                     dict = {
@@ -279,6 +290,7 @@ class MainMenu(CTK.CTk):
                         "EnemyCount": 3,
                         "AsteroidCount": 12,
                         "SupplyCount": 1,
+                        "HealthProbability": 5
                     }
             except:
                 PromptWindow(self, "Invalid data", "Profile data invalid, you might have loaded a corrupted profile, try creating a new one.")
