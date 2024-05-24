@@ -21,7 +21,6 @@ SupplyBox: https://www.kindpng.com/imgv/hTmRmoh_ammunition-box-commando-ammo-box
 '''
 TODO features:
 
-Player health and ammo display.
 Add supply boxes.
 
 Github readme.
