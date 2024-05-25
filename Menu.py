@@ -1,7 +1,5 @@
-from enum import auto
 import customtkinter as CTK
 import re, os, json, subprocess, sys
-from tkinter import Tk, Scrollbar, Text, font, Listbox, Toplevel, Frame
 from tkinter.filedialog import askopenfilename
 
 WINDOW_RESOLUTION = "350x500"
@@ -37,7 +35,7 @@ class MainMenu(CTK.CTk):
         # If a file was passed and loading it succeeds, set it as current file.
         # Otherwise ignore the passed string and load defaults.
         if (len(sys.argv) > 1) and self.loadSettings(sys.argv[1]):   
-            self.currentFilePath:str = sys.argv[1]
+            self.currentFilePath = sys.argv[1]
         else:
             self.loadSettings(DEFAULTS_PATH)
 
@@ -305,7 +303,7 @@ class MainMenu(CTK.CTk):
             return False
         return True     
 
-    def launchGame(self, autoDifficulty=False) -> None:
+    def launchGame(self, autoDifficulty:bool=False) -> None:
         '''
         Save settings and launch the game
         '''

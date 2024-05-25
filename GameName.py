@@ -18,41 +18,31 @@ Heart:     https://www.pngegg.com/en/png-invqg
 SupplyBox: https://www.kindpng.com/imgv/hTmRmoh_ammunition-box-commando-ammo-box-pixel-art-hd/
 """
 
-'''
-TODO features:
 
-Add supply boxes.
-
-Github readme.
-Everything typed?
-
-'''
 # Variables and constants
-SCREEN_WIDTH = 1366
-SCREEN_HEIGHT = 768
-PLAYER_RESCALE = 30
-MOVEMENT_SPEED = 5
-FPS = 60
+SCREEN_WIDTH:int = 1366
+SCREEN_HEIGHT:int = 768
+PLAYER_RESCALE:int = 30
+MOVEMENT_SPEED:int = 5
+FPS:int = 60
 ASTEROID_SPRITES = [r"Assets\Asteroid1.png", r"Assets\Asteroid2.png", r"Assets\Asteroid3.png"]
-ASTEROID_RESCALE = 10
-SUPPLYBOX_RESCALE = 16
-ENEMY_SPRITES = [r"Assets\Enemy1.png", r"Assets\Enemy2.png", r"Assets\Enemy3.png", r"Assets\Enemy4.png"]
-ENEMY_RESCALE = 6
-DEFAULT_PROFILE_PATH = "default.json"
-BACKGROUND_IMAGES = [r"Assets\Bg1.jpg", r"Assets\Bg2.jpg", r"Assets\Bg3.jpeg"]
-BACKGROUND_IMAGE = pygame.image.load(BACKGROUND_IMAGES[random.randint(0, len(BACKGROUND_IMAGES)-1)])
-BACKGROUND_IMAGE = pygame.transform.scale(BACKGROUND_IMAGE, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
+ASTEROID_RESCALE:int = 10
+SUPPLYBOX_RESCALE:int = 16
+ENEMY_SPRITES:list[str] = [r"Assets\Enemy1.png", r"Assets\Enemy2.png", r"Assets\Enemy3.png", r"Assets\Enemy4.png"]
+ENEMY_RESCALE:int = 6
+DEFAULT_PROFILE_PATH:str = "default.json"
+BACKGROUND_IMAGES:list[str] = [r"Assets\Bg1.jpg", r"Assets\Bg2.jpg", r"Assets\Bg3.jpeg"]
+BACKGROUND_IMAGE:pygame.Surface = pygame.transform.scale(pygame.image.load(BACKGROUND_IMAGES[random.randint(0, len(BACKGROUND_IMAGES)-1)]), (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 class Game():
     def __init__(self) -> None:
-        self.displayedAmmo = 0
-        self.ammoSprites = pygame.sprite.Group()
-        self.displayedHealth = 0
-        self.healthSprites = pygame.sprite.Group()
-        self.doLoop = True
-        self.profileFilePath = DEFAULT_PROFILE_PATH
-        self.profileDict = None
+        self.displayedAmmo:int = 0
+        self.ammoSprites:pygame.sprite.Group = pygame.sprite.Group()
+        self.displayedHealth:int = 0
+        self.healthSprites:pygame.sprite.Group = pygame.sprite.Group()
+        self.doLoop:bool = True
+        self.profileFilePath:str = DEFAULT_PROFILE_PATH
+        self.profileDict:dict[str, int] = dict()
         # Try to read the profile from the command line argument
         if len(sys.argv) > 1: 
             self.profileFilePath = sys.argv[1]
@@ -66,25 +56,25 @@ class Game():
                     # Game cannot run without settings, unrecoverable error
                     raise FileNotFoundError("Unable to read default profile file, verify the file exists and is correctly formatted.")
         # Load the profile settings:
-        self.playerScore = self.profileDict["Score"]
-        self.PLAYER_HEALTH = self.profileDict["Health"]
-        self.PLAYER_AMMO = self.profileDict["Ammo"]
-        self.ENEMY_TRACKING_SPEED = self.profileDict["EnemySpeed"]
-        self.ENEMY_HEALTH = self.profileDict["EnemyHealth"]
-        self.ASTEROID_DURABILITY = self.profileDict["AsteroidDurability"]
-        self.ENEMY_COUNT = self.profileDict["EnemyCount"]
-        self.ASTEROID_COUNT = self.profileDict["AsteroidCount"]
-        self.SUPPLY_COUNT = self.profileDict["SupplyCount"]
-        self.HEALTH_PROBABILITY = 20    # TODO
+        self.playerScore:int = self.profileDict["Score"]
+        self.PLAYER_HEALTH:int = self.profileDict["Health"]
+        self.PLAYER_AMMO:int = self.profileDict["Ammo"]
+        self.ENEMY_TRACKING_SPEED:int = self.profileDict["EnemySpeed"]
+        self.ENEMY_HEALTH:int = self.profileDict["EnemyHealth"]
+        self.ASTEROID_DURABILITY:int = self.profileDict["AsteroidDurability"]
+        self.ENEMY_COUNT:int = self.profileDict["EnemyCount"]
+        self.ASTEROID_COUNT:int = self.profileDict["AsteroidCount"]
+        self.SUPPLY_COUNT:int = self.profileDict["SupplyCount"]
+        self.HEALTH_PROBABILITY:int = self.profileDict["HealthProbability"]
         # Initialize the game
         pygame.init()
-        pygame.display.set_caption("Game Name")
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        self.allPhysicalSprites = pygame.sprite.Group()
+        pygame.display.set_caption("Space shot")
+        self.screen:pygame.Surface = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.allPhysicalSprites:pygame.sprite.Group = pygame.sprite.Group()
         # Initialize the game sprites
-        self.player = playerSprite(self)
+        self.player:playerSprite = playerSprite(self)
         self.player.draw()
-        self.missile = missileSprite(self)
+        self.missile:missileSprite = missileSprite(self)
         self.missile.draw()
         self.allPhysicalSprites.add(self.missile)
         self.allPhysicalSprites.add(self.player)
@@ -208,10 +198,13 @@ class genericSprite(pygame.sprite.Sprite):
     """
     Generic class for all sprites with basic functionalities that are not type-specific
     """
-    def __init__(self, gameInstance) -> None:
+    def __init__(self, gameInstance:Game) -> None:
         super().__init__()
-        self.health = 1
-        self.GI = gameInstance
+        self.health:int = 1
+        self.GI:Game = gameInstance
+        # Empty image and rect for typing, will be overridden by subclasses
+        self.image:pygame.Surface = pygame.Surface((0, 0))
+        self.rect:pygame.Rect = self.image.get_rect()
 
     def draw(self) -> None:
         self.GI.screen.blit(self.image, self.rect)
@@ -250,7 +243,7 @@ class genericSprite(pygame.sprite.Sprite):
             self.rect.y = -self.rect.height - random.randint(0, SCREEN_HEIGHT)
         
 class asteroidSprite(genericSprite):
-    def __init__(self, gameInstance) -> None:
+    def __init__(self, gameInstance:Game) -> None:
         super().__init__(gameInstance)
         self.health = self.GI.ASTEROID_DURABILITY
         self.positionUp() # Start at the top of the screen and choose a sprite picture
@@ -265,7 +258,7 @@ class asteroidSprite(genericSprite):
         self.rect = self.image.get_rect()   # Get new rect after rescaling
 
 class enemySprite(genericSprite):
-    def __init__(self, gameInstance) -> None:
+    def __init__(self, gameInstance:Game) -> None:
         super().__init__(gameInstance)
         self.health = self.GI.ENEMY_HEALTH
         self.positionUp() # Start at the top of the screen and choose a sprite picture
@@ -287,7 +280,7 @@ class enemySprite(genericSprite):
             self.rect.x -= self.GI.ENEMY_TRACKING_SPEED
 
 class playerSprite(genericSprite):
-    def __init__(self, gameInstance) -> None:
+    def __init__(self, gameInstance:Game) -> None:
         super().__init__(gameInstance)
         self.health = self.GI.PLAYER_HEALTH
         self.image = pygame.image.load(r"Assets\Player.png").convert_alpha()
@@ -324,7 +317,7 @@ class playerSprite(genericSprite):
             self.ammo += 1
 
 class missileSprite(genericSprite):
-    def __init__(self, gameInstance) -> None:
+    def __init__(self, gameInstance:Game) -> None:
         super().__init__(gameInstance)
         self.image = pygame.image.load(r"Assets\Missile.png").convert_alpha()
         self.rect = self.image.get_rect()
@@ -338,7 +331,7 @@ class missileSprite(genericSprite):
         self.rect.center = (self.GI.player.rect.centerx, self.GI.player.rect.centery - self.GI.player.rect.height)
 
 class supplySprite(genericSprite):
-    def __init__(self, gameInstance):
+    def __init__(self, gameInstance:Game):
         super().__init__(gameInstance)
         self.image = pygame.image.load(r"Assets\SupplyBox.png").convert_alpha()
         self.rect = self.image.get_rect()
@@ -348,10 +341,10 @@ class supplySprite(genericSprite):
 
 class IndicatorSprite(pygame.sprite.Sprite):
     '''Not a physical sprite, only used to display statistics'''
-    def __init__(self, gameInstance, assetPath) -> None:
+    def __init__(self, gameInstance:Game, assetPath:str) -> None:
         super().__init__()
-        self.GI = gameInstance
-        self.image = pygame.image.load(assetPath).convert_alpha()
-        self.rect = self.image.get_rect()
+        self.GI:Game = gameInstance
+        self.image:pygame.Surface = pygame.image.load(assetPath).convert_alpha()
+        self.rect:pygame.Rect = self.image.get_rect()
         self.rect.y = SCREEN_HEIGHT-self.rect.height
 Game()
