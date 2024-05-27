@@ -118,7 +118,6 @@ class Game():
                     if sprite.rect.y > SCREEN_HEIGHT:
                         sprite.positionUp()
                     if sprite.rect.colliderect(self.player.rect):
-                        print("Something collided with the player")
                         if not isinstance(sprite, supplySprite):
                             self.player.takeDamage()
                         else:
